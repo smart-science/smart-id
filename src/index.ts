@@ -18,7 +18,7 @@ export type FormattedSID = `${string}-${string}-${string}-${string}` & {
     readonly [FormattedSidBrand]: typeof FormattedSidBrand;
 };
 
-/** Discriminated union result representing either {success, data} or {failure, error}. */
+/** Discriminated union result representing either `{ readonly ok: true, readonly data: T }` or `{ readonly ok: false, readonly error: string }`. */
 export type Result<T> =
     | {
           /** Successful operation indicator. */
@@ -172,7 +172,7 @@ export function parse(input: unknown): Result<SID> {
  * - parses and validates raw or formatted identifier input
  * - formatting into 19-character quad group (`XXXX-XXXX-XXXX-XXXX`)
  *
- * @param input - Raw or unhyphenated SID.
+ * @param input - Raw or formatted SID.
  * @returns `Result<FormattedSID>` containing formatted identifier on success, else error string.
  */
 export function format(input: unknown): Result<FormattedSID> {
@@ -194,6 +194,7 @@ export function format(input: unknown): Result<FormattedSID> {
  *
  * - strips hyphens at fixed indices (`4, 9, 14`) - direct string slicing.
  *
+ * @deprecated Use `parse()` instead. `unformat()` does not validate input and throws or corrupts invalid data.
  * @param id - Validated formatted SID.
  * @returns Canonical 16-character unhyphenated `SID`.
  * @throws {TypeError} In untyped JavaScript if `id` is not a string (e.g. `null` or `undefined`).
@@ -224,10 +225,10 @@ function toQuadString(id: SID): FormattedSID {
  * - repairs ambiguous characters (`I`/`L` -> `1`, `O` -> `0`)
  * - validates hyphen positions (`XXXX-XXXX-XXXX-XXXX`) and strips them
  *
- * Does not validate alphabet membership or checksum (`validateNormalized` does).
+ * Does not validate alphabet membership or checksum.
  *
  * @param input - Raw input to normalize.
- * @returns Cleaned 16-character uppercase string on success, or an error result.
+ * @returns Cleaned 16-character string on success, or an error result.
  */
 function normalize(input: unknown): Result<string> {
     if (typeof input !== 'string') {

@@ -26,11 +26,6 @@ export type ExpectFalse<T extends false> = T;
  */
 export type Equal<X, Y> = (<T>() => T extends X ? 1 : 2) extends <T>() => T extends Y ? 1 : 2 ? true : false;
 
-/**
- * Checks if T is strictly `never`.
- * Wrapped in tuples [T] to prevent distributive conditional evaluation on naked type parameters.
- */
-export type IsNever<T> = [T] extends [never] ? true : false;
 
 /**
  * Checks assignability (whether A can be assigned to B).
