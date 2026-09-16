@@ -1,6 +1,6 @@
 {
     "name": "@smart-science/sid",
-    "version": "0.1.0",
+    "version": "0.1.1",
     "description": "SID: generator, parser, formatter, and checksum verifier",
     "keywords": [
         "sid",
