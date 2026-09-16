@@ -70,9 +70,11 @@ describe('SID Module', () => {
                 const id = generate();
                 expect(id).not.toMatch(/[ILOUilou]/);
                 for (let j = 0; j < 15; j++) {
-                    const idx = ALPHABET.indexOf(id[j]);
+                    const char = id[j] ?? '';
+                    const idx = ALPHABET.indexOf(char);
                     if (idx !== -1) {
-                        bucketCounts[idx]++;
+                        const currentCount = bucketCounts[idx] ?? 0;
+                        bucketCounts[idx] = currentCount + 1;
                     }
                 }
             }

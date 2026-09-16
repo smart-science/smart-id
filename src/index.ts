@@ -83,7 +83,7 @@ export function generate(): SID {
     let payload = '';
     let sum = 0;
     for (let i = 0; i < PAYLOAD_LENGTH; i++) {
-        const val = bytes[i] & 31;
+        const val = (bytes[i] ?? 0) & 31;
         sum += val * (i % 2 === 0 ? 1 : 3);
         payload += ALPHABET[val];
     }
@@ -278,7 +278,7 @@ function validateNormalized(clean: string): 0 | 1 | 2 {
     let sum = 0;
     for (let i = 0; i < PAYLOAD_LENGTH; i++) {
         const code = clean.charCodeAt(i);
-        const val = code < 256 ? CHAR_LOOKUP[code] : -1;
+        const val = code < 256 ? (CHAR_LOOKUP[code] ?? -1) : -1;
         if (val === -1) {
             return 1;
         }
@@ -288,7 +288,7 @@ function validateNormalized(clean: string): 0 | 1 | 2 {
 
     // validate the 16th check char directly via table lookup.
     const checkCode = clean.charCodeAt(PAYLOAD_LENGTH);
-    const checkVal = checkCode < 256 ? CHAR_LOOKUP[checkCode] : -1;
+    const checkVal = checkCode < 256 ? (CHAR_LOOKUP[checkCode] ?? -1) : -1;
     if (checkVal === -1) {
         return 1;
     }

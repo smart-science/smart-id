@@ -5,6 +5,8 @@
         "moduleResolution": "Bundler",
         "strict": true,
         "skipLibCheck": true,
+        "isolatedModules": true,
+        "noUncheckedIndexedAccess": true,
         "declaration": true,
         "declarationMap": true,
         "forceConsistentCasingInFileNames": true,
