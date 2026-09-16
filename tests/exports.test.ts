@@ -23,7 +23,6 @@ describe('Public runtime API', () => {
             'isFormattedSID',
             'isSID',
             'parse',
-            'unformat',
             'verify',
         ]);
     });

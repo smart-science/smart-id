@@ -233,22 +233,6 @@ export function format(input: unknown): SidResult<FormattedSID> {
     };
 }
 
-/**
- * **Converts a formatted identifier back to its canonical 16-character representation.**
- *
- * Assumes input was already parsed and validated; for unvalidated input, use `parse()`.
- *
- * - strips hyphens at fixed indices (`4, 9, 14`) - direct string slicing.
- *
- * @deprecated Use `parse()` instead. `unformat()` does not validate input and throws or corrupts invalid data.
- * @param id - Validated formatted SID.
- * @returns Canonical 16-character unhyphenated `SID`.
- * @throws {TypeError} In untyped JavaScript if `id` is not a string (e.g. `null` or `undefined`).
- */
-export function unformat(id: FormattedSID): SID {
-    return (id.slice(0, 4) + id.slice(5, 9) + id.slice(10, 14) + id.slice(15)) as SID;
-}
-
 // -------------------------------------------------------------------
 // 4. Internal Helper Functions
 // -------------------------------------------------------------------

@@ -18,7 +18,6 @@ import type {
     SID,
     SidErrorCode,
     SidResult,
-    unformat,
     verify,
 } from '../../src/index';
 import type { Equal, Expect, ExpectFalse, Extends } from './type-utils';
@@ -42,13 +41,10 @@ export type Test_Parse_ReturnType = Expect<Equal<ReturnType<typeof parse>, SidRe
 // 2.5 format returns SidResult<FormattedSID>.
 export type Test_Format_ReturnType = Expect<Equal<ReturnType<typeof format>, SidResult<FormattedSID>>>;
 
-// 2.6 unformat returns canonical SID.
-export type Test_Unformat_ReturnType = Expect<Equal<ReturnType<typeof unformat>, SID>>;
-
-// 2.7 isSID is a type guard narrowing unknown to input is SID.
+// 2.6 isSID is a type guard narrowing unknown to input is SID.
 export type Test_IsSID_TypeGuard = Expect<Extends<typeof isSID, (input: unknown) => input is SID>>;
 
-// 2.8 isFormattedSID is a type guard narrowing unknown to input is FormattedSID.
+// 2.7 isFormattedSID is a type guard narrowing unknown to input is FormattedSID.
 export type Test_IsFormattedSID_TypeGuard = Expect<
     Extends<typeof isFormattedSID, (input: unknown) => input is FormattedSID>
 >;
@@ -75,7 +71,7 @@ export type Test_String_Does_Not_Extend_FormattedSID = ExpectFalse<Extends<strin
 // 3.6 canonical SID cannot be assigned to FormattedSID without explicit formatting.
 export type Test_SID_Does_Not_Extend_FormattedSID = ExpectFalse<Extends<SID, FormattedSID>>;
 
-// 3.7 FormattedSID cannot be assigned to canonical SID without parsing or unformatting.
+// 3.7 FormattedSID cannot be assigned to canonical SID without parsing.
 export type Test_FormattedSID_Does_Not_Extend_SID = ExpectFalse<Extends<FormattedSID, SID>>;
 
 // -------------------------------------------------------------------

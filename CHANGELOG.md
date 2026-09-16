@@ -17,6 +17,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **BREAKING**: `SID` and `FormattedSID` are branded with string-literal types; the runtime exports `SidBrand` and `FormattedSidBrand` are removed.
 - **BREAKING**: `Result<T>` is renamed to `SidResult<T>`.
 
+### Removed
+
+- **BREAKING**: `unformat()`; use `parse()` instead.
+
 ## [0.1.1] - 2026-09-16
 
 Tagged in git only; not published to npm.

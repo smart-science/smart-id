@@ -23,14 +23,13 @@ npm install @smart-science/sid
 * **`verify(input)`**: Validates length, alphabet, and checksum without throwing (`boolean`).
 * **`parse(input)`**: Normalizes, repairs ambiguous characters, and validates into `SidResult<SID>`.
 * **`format(input)`**: Validates and formats raw or formatted input into `SidResult<FormattedSID>`.
-* **`unformat(id)`**: Zero-overhead $O(1)$ hyphen stripping for pre-validated `FormattedSID`.
 
 ---
 
 ## Usage
 
 ```ts
-import { format, generate, generateFormatted, parse, unformat, verify } from '@smart-science/sid';
+import { format, generate, generateFormatted, parse, verify } from '@smart-science/sid';
 
 // 1. Generation
 const id = generate(); // '0123456789ABCDEN'
@@ -48,11 +47,11 @@ if (res.ok) {
     console.error(res.code, res.error);
 }
 
-// 4. Formatting & Unformatting
+// 4. Formatting
 const formattedResult = format(id); // { ok: true, data: '0123-4567-89AB-CDEN' }
-if (formattedResult.ok) {
-    const canonical = unformat(formattedResult.data); // '0123456789ABCDEN'
-}
+
+// 5. Back to canonical form
+const canonical = parse('0123-4567-89AB-CDEN'); // { ok: true, data: '0123456789ABCDEN' }
 ```
 
 ---
@@ -111,14 +110,6 @@ Uses Crockford Base32 (`0-9`, `A-Z` excluding `I`, `L`, `O`, `U`) with Modulo-32
 * Parses and validates raw or formatted input.
 * Formats canonical string into quad group `XXXX-XXXX-XXXX-XXXX`.
 * **Returns**: `SidResult<FormattedSID>` (`{ ok: true, data: FormattedSID }` or `{ ok: false, code: SidErrorCode, error: string }`).
-
-### `unformat(id: FormattedSID): SID`
-
-* Assumes input was already parsed and validated; for unvalidated input, use `parse()` before.
-* Strips hyphens at fixed indices (`4, 9, 14`) via direct string slicing.
-* Zero runtime regex or validation overhead for pre-validated `FormattedSID`.
-* **Returns**: Canonical 16-character `SID`.
-* **Throws**: `TypeError` in untyped JavaScript if `id` is not a string (e.g. `null` or `undefined`).
 
 ---
 

@@ -8,8 +8,8 @@
 // -------------------------------------------------------------------
 
 import { describe, expect, it } from 'bun:test';
-import { format, parse, unformat, verify } from '../src/index';
-import { quad, VALID_FORMATTED, VALID_ID } from './helpers';
+import { format, parse, verify } from '../src/index';
+import { quad, VALID_ID } from './helpers';
 
 // -------------------------------------------------------------------
 // 2. Test Suite: parse() & Unicode Normalization
@@ -308,26 +308,6 @@ describe('format()', () => {
             expect(parseRes.ok).toBe(false);
             // identical failure result, including the error code
             expect<unknown>(format(badInput)).toEqual(parseRes);
-        }
-    });
-});
-
-describe('unformat() (deprecated)', () => {
-    it('unformats FormattedSID back to canonical 16-character SID', () => {
-        const formatted = VALID_FORMATTED;
-        const unformatted = unformat(formatted);
-
-        expect(unformatted).toHaveLength(16);
-        expect(unformatted).not.toContain('-');
-        expect(verify(unformatted)).toBe(true);
-    });
-
-    it('is the exact inverse of format() for valid canonical SIDs', () => {
-        const id = VALID_ID;
-        const formatted = format(id);
-        expect(formatted.ok).toBe(true);
-        if (formatted.ok) {
-            expect(unformat(formatted.data)).toBe(id);
         }
     });
 });
