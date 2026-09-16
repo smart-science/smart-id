@@ -7,9 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- Machine-readable `code` (`SidErrorCode`) on every failure result: `NOT_A_STRING`, `INVALID_LENGTH`, `INVALID_FORMAT`, `INVALID_CHARACTER`, or `CHECKSUM_MISMATCH`.
+
 ### Changed
 
 - License changed from `UNLICENSED` to `Apache-2.0`.
+- **BREAKING**: `SID` and `FormattedSID` are branded with string-literal types; the runtime exports `SidBrand` and `FormattedSidBrand` are removed.
+- **BREAKING**: `Result<T>` is renamed to `SidResult<T>`.
 
 ## [0.1.1] - 2026-09-16
 

@@ -7,19 +7,24 @@
 // 1. Type Declarations
 // -------------------------------------------------------------------
 
-export const SidBrand: unique symbol = Symbol('SidBrand');
-export const FormattedSidBrand: unique symbol = Symbol('FormattedSidBrand');
-
 /** Nominal branded type representing a validated, canonical 16-character identifier. */
-export type SID = string & { readonly [SidBrand]: typeof SidBrand };
+export type SID = string & { readonly __sidBrand: 'SID' };
 
 /** Formatted identifier string matching `XXXX-XXXX-XXXX-XXXX`. */
 export type FormattedSID = `${string}-${string}-${string}-${string}` & {
-    readonly [FormattedSidBrand]: typeof FormattedSidBrand;
+    readonly __sidBrand: 'FormattedSID';
 };
 
-/** Discriminated union result representing either `{ readonly ok: true, readonly data: T }` or `{ readonly ok: false, readonly error: string }`. */
-export type Result<T> =
+/** Machine-readable error codes identifying why identifier validation or parsing failed. */
+export type SidErrorCode =
+    | 'NOT_A_STRING'
+    | 'INVALID_LENGTH'
+    | 'INVALID_FORMAT'
+    | 'INVALID_CHARACTER'
+    | 'CHECKSUM_MISMATCH';
+
+/** Discriminated union result representing either `{ readonly ok: true, readonly data: T }` or `{ readonly ok: false, readonly code: SidErrorCode, readonly error: string }`. */
+export type SidResult<T> =
     | {
           /** Successful operation indicator. */
           readonly ok: true;
@@ -29,6 +34,8 @@ export type Result<T> =
     | {
           /** Failed operation indicator. */
           readonly ok: false;
+          /** Machine-readable error code. */
+          readonly code: SidErrorCode;
           /** Error message describing failure reason. */
           readonly error: string;
       };
@@ -169,9 +176,9 @@ export function isFormattedSID(input: unknown): input is FormattedSID {
  * Safe against non-string and malformed inputs.
  *
  * @param input - Raw or formatted SID.
- * @returns `Result<SID>` containing canonical 16-character `SID` on success, else error string.
+ * @returns `SidResult<SID>` containing canonical 16-character `SID` on success, else error result.
  */
-export function parse(input: unknown): Result<SID> {
+export function parse(input: unknown): SidResult<SID> {
     const normalized = normalize(input);
     if (!normalized.ok) {
         return normalized;
@@ -186,6 +193,7 @@ export function parse(input: unknown): Result<SID> {
         if (val === -1) {
             return {
                 ok: false,
+                code: 'INVALID_CHARACTER',
                 error: `Invalid ID: '${clean}' contains invalid character`,
             };
         }
@@ -194,6 +202,7 @@ export function parse(input: unknown): Result<SID> {
         } else if (val !== checkValue(sum)) {
             return {
                 ok: false,
+                code: 'CHECKSUM_MISMATCH',
                 error: `Invalid ID: '${clean}' failed checksum validation`,
             };
         }
@@ -210,9 +219,9 @@ export function parse(input: unknown): Result<SID> {
  * - formatting into 19-character quad group (`XXXX-XXXX-XXXX-XXXX`)
  *
  * @param input - Raw or formatted SID.
- * @returns `Result<FormattedSID>` containing formatted identifier on success, else error string.
+ * @returns `SidResult<FormattedSID>` containing formatted identifier on success, else error result.
  */
-export function format(input: unknown): Result<FormattedSID> {
+export function format(input: unknown): SidResult<FormattedSID> {
     const parsed = parse(input);
     if (!parsed.ok) {
         return parsed;
@@ -266,9 +275,13 @@ function toQuadString(id: SID): FormattedSID {
  * @param input - Raw input to normalize.
  * @returns Cleaned 16-character string on success, or an error result.
  */
-function normalize(input: unknown): Result<string> {
+function normalize(input: unknown): SidResult<string> {
     if (typeof input !== 'string') {
-        return { ok: false, error: `Expected string input, received ${typeof input}` };
+        return {
+            ok: false,
+            code: 'NOT_A_STRING',
+            error: `Expected string input, received ${typeof input}`,
+        };
     }
 
     const trimmed = input.trim();
@@ -291,12 +304,14 @@ function normalize(input: unknown): Result<string> {
         }
         return {
             ok: false,
+            code: 'INVALID_FORMAT',
             error: 'Invalid ID format: expected XXXX-XXXX-XXXX-XXXX with hyphens at positions 4, 9, 14',
         };
     }
 
     return {
         ok: false,
+        code: 'INVALID_LENGTH',
         error: `Invalid ID length: expected ${TOTAL_LENGTH} characters, got ${trimmed.length}`,
     };
 }

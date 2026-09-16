@@ -146,6 +146,7 @@ describe('parse() - Structural & Boundary Edge Cases', () => {
         const res = parse(hyphenated16);
         expect(res).toEqual({
             ok: false,
+            code: 'INVALID_CHARACTER',
             error: `Invalid ID: '${hyphenated16}' contains invalid character`,
         });
     });
@@ -154,10 +155,12 @@ describe('parse() - Structural & Boundary Edge Cases', () => {
         // Lengths 15 and 17 (neighbours of the raw length 16)
         expect(parse('0123456789ABCDE')).toEqual({
             ok: false,
+            code: 'INVALID_LENGTH',
             error: 'Invalid ID length: expected 16 characters, got 15',
         });
         expect(parse('0123456789ABCDEN0')).toEqual({
             ok: false,
+            code: 'INVALID_LENGTH',
             error: 'Invalid ID length: expected 16 characters, got 17',
         });
 
@@ -167,6 +170,7 @@ describe('parse() - Structural & Boundary Edge Cases', () => {
         expect(verify(len18)).toBe(false);
         expect(parse(len18)).toEqual({
             ok: false,
+            code: 'INVALID_LENGTH',
             error: 'Invalid ID length: expected 16 characters, got 18',
         });
 
@@ -176,6 +180,7 @@ describe('parse() - Structural & Boundary Edge Cases', () => {
         expect(verify(len20)).toBe(false);
         expect(parse(len20)).toEqual({
             ok: false,
+            code: 'INVALID_LENGTH',
             error: 'Invalid ID length: expected 16 characters, got 20',
         });
 
@@ -183,6 +188,7 @@ describe('parse() - Structural & Boundary Edge Cases', () => {
         expect(verify('   ')).toBe(false);
         expect(parse('   ')).toEqual({
             ok: false,
+            code: 'INVALID_LENGTH',
             error: 'Invalid ID length: expected 16 characters, got 0',
         });
 
@@ -202,6 +208,7 @@ describe('parse() - Structural & Boundary Edge Cases', () => {
         expect(verify(invalidCharFormatted)).toBe(false);
         expect(parse(invalidCharFormatted)).toEqual({
             ok: false,
+            code: 'INVALID_CHARACTER',
             error: "Invalid ID: '0123456789ABCDEU' contains invalid character",
         });
 
@@ -210,6 +217,7 @@ describe('parse() - Structural & Boundary Edge Cases', () => {
         expect(verify(invalidChecksumFormatted)).toBe(false);
         expect(parse(invalidChecksumFormatted)).toEqual({
             ok: false,
+            code: 'CHECKSUM_MISMATCH',
             error: "Invalid ID: '0123456789ABCDEF' failed checksum validation",
         });
     });
@@ -217,6 +225,7 @@ describe('parse() - Structural & Boundary Edge Cases', () => {
     it('triggers every hyphen failure branch for 19-character inputs', () => {
         const expectedFormatError = {
             ok: false,
+            code: 'INVALID_FORMAT',
             error: 'Invalid ID format: expected XXXX-XXXX-XXXX-XXXX with hyphens at positions 4, 9, 14',
         } as const;
 
@@ -284,13 +293,21 @@ describe('format()', () => {
     });
 
     it('delegates validation failures to parse without throwing', () => {
-        for (const badInput of ['INVALID_LENGTH', '0123456789ABCDU0', null, undefined, 12345, true, {}]) {
+        for (const badInput of [
+            'INVALID_LENGTH',
+            '0123456789ABCDU0',
+            '0123.4567.89AB.CDE7',
+            '0123456789ABCDEF',
+            null,
+            undefined,
+            12345,
+            true,
+            {},
+        ]) {
             const parseRes = parse(badInput);
-            const formatRes = format(badInput);
-            expect(formatRes.ok).toBe(false);
-            if (!formatRes.ok && !parseRes.ok) {
-                expect(formatRes.error).toBe(parseRes.error);
-            }
+            expect(parseRes.ok).toBe(false);
+            // identical failure result, including the error code
+            expect<unknown>(format(badInput)).toEqual(parseRes);
         }
     });
 });

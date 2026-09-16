@@ -15,8 +15,9 @@ import type {
     isFormattedSID,
     isSID,
     parse,
-    Result,
     SID,
+    SidErrorCode,
+    SidResult,
     unformat,
     verify,
 } from '../../src/index';
@@ -35,11 +36,11 @@ export type Test_GenerateFormatted_ReturnType = Expect<Equal<ReturnType<typeof g
 // 2.3 verify returns pure boolean.
 export type Test_Verify_ReturnType = Expect<Equal<ReturnType<typeof verify>, boolean>>;
 
-// 2.4 parse returns Result<SID>.
-export type Test_Parse_ReturnType = Expect<Equal<ReturnType<typeof parse>, Result<SID>>>;
+// 2.4 parse returns SidResult<SID>.
+export type Test_Parse_ReturnType = Expect<Equal<ReturnType<typeof parse>, SidResult<SID>>>;
 
-// 2.5 format returns Result<FormattedSID>.
-export type Test_Format_ReturnType = Expect<Equal<ReturnType<typeof format>, Result<FormattedSID>>>;
+// 2.5 format returns SidResult<FormattedSID>.
+export type Test_Format_ReturnType = Expect<Equal<ReturnType<typeof format>, SidResult<FormattedSID>>>;
 
 // 2.6 unformat returns canonical SID.
 export type Test_Unformat_ReturnType = Expect<Equal<ReturnType<typeof unformat>, SID>>;
@@ -78,18 +79,18 @@ export type Test_SID_Does_Not_Extend_FormattedSID = ExpectFalse<Extends<SID, For
 export type Test_FormattedSID_Does_Not_Extend_SID = ExpectFalse<Extends<FormattedSID, SID>>;
 
 // -------------------------------------------------------------------
-// 4. Result Discriminated Union Shape
+// 4. SidResult Discriminated Union Shape
 // -------------------------------------------------------------------
 
-type SuccessBranch<T> = Extract<Result<T>, { ok: true }>;
-type FailureBranch<T> = Extract<Result<T>, { ok: false }>;
+type SuccessBranch<T> = Extract<SidResult<T>, { ok: true }>;
+type FailureBranch<T> = Extract<SidResult<T>, { ok: false }>;
 
 // 4.1 success branch exposes readonly data and ok: true.
 export type Test_Result_Success_Shape = Expect<Equal<SuccessBranch<SID>, { readonly ok: true; readonly data: SID }>>;
 
-// 4.2 failure branch exposes readonly error and ok: false.
+// 4.2 failure branch exposes readonly error, code: SidErrorCode, and ok: false.
 export type Test_Result_Failure_Shape = Expect<
-    Equal<FailureBranch<SID>, { readonly ok: false; readonly error: string }>
+    Equal<FailureBranch<SID>, { readonly ok: false; readonly code: SidErrorCode; readonly error: string }>
 >;
 
 // -------------------------------------------------------------------
@@ -102,13 +103,13 @@ export const _plainStringTest: string = formattedExample;
 export const _templateLiteralTest = `ID: ${formattedExample}`;
 export const _startsWithTest: boolean = formattedExample.startsWith('0123');
 
-// 5.2 Accessing .data on Result<SID> without checking .ok is a compile-time type error.
-declare const result: Result<SID>;
-// @ts-expect-error Property 'data' does not exist on type '{ readonly ok: false; readonly error: string; }'.
+// 5.2 Accessing .data on SidResult<SID> without checking .ok is a compile-time type error.
+declare const result: SidResult<SID>;
+// @ts-expect-error Property 'data' does not exist on failure branch.
 export const _invalidDataAccess = result.data;
 
-// 5.3 Accessing .error on Result<SID> without checking !.ok is a compile-time type error.
-// @ts-expect-error Property 'error' does not exist on type '{ readonly ok: true; readonly data: SID; }'.
+// 5.3 Accessing .error on SidResult<SID> without checking !.ok is a compile-time type error.
+// @ts-expect-error Property 'error' does not exist on success branch.
 export const _invalidErrorAccess = result.error;
 
 // 5.4 Narrowing via ok discriminator separates data and error branches.
@@ -118,6 +119,7 @@ if (result.ok) {
     const _errorOnSuccess = result.error;
 } else {
     const _narrowedError: string = result.error;
+    const _narrowedCode: SidErrorCode = result.code;
     // @ts-expect-error Property 'data' does not exist on failure branch.
     const _dataOnFailure = result.data;
 }
