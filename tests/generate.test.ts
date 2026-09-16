@@ -23,7 +23,7 @@ describe('generate() & generateFormatted()', () => {
             for (let i = 0; i < 1_000; i++) {
                 const id = generate();
                 expect(id).not.toMatch(/[ILOUilou]/);
-                for (let j = 0; j < 15; j++) {
+                for (let j = 0; j < 16; j++) {
                     const char = id[j] ?? '';
                     const idx = ALPHABET.indexOf(char);
                     expect(idx).not.toBe(-1);
@@ -31,7 +31,7 @@ describe('generate() & generateFormatted()', () => {
                     bucketCounts[idx] = currentCount + 1;
                 }
             }
-            // every single Crockford Base32 symbol must appear at least once across 15,000 generated characters.
+            // every single Crockford Base32 symbol must appear at least once across 16,000 generated characters (incl. check characters).
             expect(bucketCounts.every((count) => count > 0)).toBe(true);
         });
 

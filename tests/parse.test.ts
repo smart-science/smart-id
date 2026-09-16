@@ -245,6 +245,12 @@ describe('parse() - Structural & Boundary Edge Cases', () => {
         const trailingHyphen = '0123-4567-89AB-CDE-';
         expect(verify(trailingHyphen)).toBe(false);
         expect(parse(trailingHyphen)).toEqual(expectedFormatError);
+
+        // Other delimiters at the hyphen positions
+        for (const delimited of ['0123.4567.89AB.CDE7', '0123 4567 89AB CDE7', '0123_4567_89AB_CDE7']) {
+            expect(verify(delimited)).toBe(false);
+            expect(parse(delimited)).toEqual(expectedFormatError);
+        }
     });
 });
 
