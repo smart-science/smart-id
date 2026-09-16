@@ -84,7 +84,7 @@ function checkValue(sum: number): number {
  * - appends the calculated Modulo-32 check character.
  *
  * @returns Canonical 16-character unhyphenated `SID`.
- * @throws {TypeError} If runtime environment lacks Crypto (`globalThis.crypto.getRandomValues`).
+ * @throws {TypeError} If the runtime has no global Web Crypto (`globalThis.crypto.getRandomValues`), e.g. Node.js 18 and older.
  */
 export function generate(): SID {
     const bytes = new Uint8Array(PAYLOAD_LENGTH);
@@ -109,7 +109,7 @@ export function generate(): SID {
  * - groups it into a 19-character hyphenated `FormattedSID` string
  *
  * @returns Formatted 19-character hyphenated `FormattedSID` string.
- * @throws {TypeError} If runtime environment lacks Crypto (`globalThis.crypto.getRandomValues`).
+ * @throws {TypeError} If the runtime has no global Web Crypto (`globalThis.crypto.getRandomValues`), e.g. Node.js 18 and older.
  */
 export function generateFormatted(): FormattedSID {
     return toQuadString(generate());
@@ -122,7 +122,7 @@ export function generateFormatted(): FormattedSID {
  * - validates Crockford Base32 character set
  * - validates Modulo-32 checksum
  *
- * Safe against non-string and malformed inputs.
+ * Never throws; safe against non-string and malformed inputs.
  *
  * @param input - Raw or formatted SID.
  * @returns `true` if valid, else `false`.
@@ -136,7 +136,7 @@ export function verify(input: unknown): boolean {
  *
  * Unlike `verify()`, which accepts formatted (`XXXX-XXXX-XXXX-XXXX`), lowercase,
  * whitespace-padded, or repaired variants, `isSID()` returns `true` *only* if the input
- * is already an exact canonical unhyphenated uppercase 16-character `SID`.
+ * is already an exact canonical unhyphenated uppercase 16-character `SID`. Never throws.
  *
  * @param input - Value to validate.
  * @returns `true` if input is an exact canonical `SID`, narrowing the type.
@@ -151,7 +151,7 @@ export function isSID(input: unknown): input is SID {
  *
  * Unlike `verify()`, which accepts unhyphenated, lowercase, whitespace-padded, or repaired
  * variants, `isFormattedSID()` returns `true` *only* if the input is already an exact
- * canonical 19-character hyphenated uppercase `FormattedSID`.
+ * canonical 19-character hyphenated uppercase `FormattedSID`. Never throws.
  *
  * @param input - Value to validate.
  * @returns `true` if input is an exact canonical `FormattedSID`, narrowing the type.
@@ -173,7 +173,7 @@ export function isFormattedSID(input: unknown): input is FormattedSID {
  * - verifies Crockford Base32 alphabet
  * - verifies Modulo-32 checksum
  *
- * Safe against non-string and malformed inputs.
+ * Never throws; safe against non-string and malformed inputs.
  *
  * @param input - Raw or formatted SID.
  * @returns `SidResult<SID>` containing canonical 16-character `SID` on success, else error result.
@@ -216,7 +216,9 @@ export function parse(input: unknown): SidResult<SID> {
  * **Formats an identifier into quad groups `XXXX-XXXX-XXXX-XXXX`.**
  *
  * - parses and validates raw or formatted identifier input
- * - formatting into 19-character quad group (`XXXX-XXXX-XXXX-XXXX`)
+ * - formats it into the 19-character quad group (`XXXX-XXXX-XXXX-XXXX`)
+ *
+ * Never throws; safe against non-string and malformed inputs.
  *
  * @param input - Raw or formatted SID.
  * @returns `SidResult<FormattedSID>` containing formatted identifier on success, else error result.

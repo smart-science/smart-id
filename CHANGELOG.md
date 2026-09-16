@@ -11,6 +11,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Machine-readable `code` (`SidErrorCode`) on every failure result: `NOT_A_STRING`, `INVALID_LENGTH`, `INVALID_FORMAT`, `INVALID_CHARACTER`, or `CHECKSUM_MISMATCH`.
 - Releases are published to npm with provenance.
+- README documents the algorithm, error detection, strict type guards, error codes, and runtime support.
 
 ### Changed
 
