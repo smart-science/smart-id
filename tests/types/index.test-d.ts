@@ -136,4 +136,3 @@ if (checkIsFormattedSID(unknownValue)) {
     const _narrowedFormatted: FormattedSID = unknownValue;
     const _isString: string = unknownValue;
 }
-

@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: UNLICENSED
  */
 
-import { parse, type FormattedSID, type SID } from '../src/index';
+import { type FormattedSID, parse, type SID } from '../src/index';
 
 /** Canonical Crockford Base32 alphabet for tests. */
 export const ALPHABET = '0123456789ABCDEFGHJKMNPQRSTVWXYZ';

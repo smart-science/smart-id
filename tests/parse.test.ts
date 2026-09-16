@@ -107,7 +107,6 @@ describe('parse() - Unicode Safety & Case Mapping', () => {
 describe('parse() - Unusual Non-String Inputs', () => {
     it('rejects boxed String instances and unusual non-string objects', () => {
         // boxed String objects have typeof === 'object' and must be rejected
-        // biome-ignore lint/style/useNumberNamespace: testing boxed String
         const boxed = new String(VALID_ID);
         expect(verify(boxed)).toBe(false);
         const parseBoxed = parse(boxed);
