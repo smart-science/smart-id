@@ -1,5 +1,9 @@
 [test]
-coveragePathIgnorePatterns = [
-  "dist/**"
+pathIgnorePatterns = [
+  "dist/**",
+  "scratch/**",
+  "temp/**"
 ]
+coverage = true
 coverageSkipTestFiles = true
+coverageThreshold = 1.0
