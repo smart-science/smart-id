@@ -59,8 +59,8 @@ describe('Strict Type Guards: isSID() and isFormattedSID()', () => {
 
         it('returns false for repaired ambiguous character inputs', () => {
             // 'OI23...' repairs to '0123...' under parse(), but is not canonical input
-            expect(isSID('OI23456789ABCDEN')).toBe(false);
-            expect(isSID('OL23456789ABCDEN')).toBe(false);
+            expect(isSID('OI23456789ABCDE7')).toBe(false);
+            expect(isSID('OL23456789ABCDE7')).toBe(false);
         });
 
         it('returns false for invalid lengths and non-string inputs', () => {
@@ -100,13 +100,13 @@ describe('Strict Type Guards: isSID() and isFormattedSID()', () => {
         });
 
         it('returns false for repaired ambiguous characters inside formatted strings', () => {
-            expect(isFormattedSID('oi23-4567-89ab-cden')).toBe(false);
-            expect(isFormattedSID('OI23-4567-89AB-CDEN')).toBe(false);
+            expect(isFormattedSID('oi23-4567-89ab-cde7')).toBe(false);
+            expect(isFormattedSID('OI23-4567-89AB-CDE7')).toBe(false);
         });
 
         it('returns false for misplaced hyphens and invalid lengths', () => {
-            expect(isFormattedSID('0123--567-89AB-CDEN')).toBe(false);
-            expect(isFormattedSID('01234-5678-9ABC-DEN')).toBe(false);
+            expect(isFormattedSID('0123--567-89AB-CDE7')).toBe(false);
+            expect(isFormattedSID('01234-5678-9ABC-DE7')).toBe(false);
             expect(isFormattedSID('0123-4567-89AB-CDE')).toBe(false);
             for (const input of INVALID_INPUTS) {
                 expect(isFormattedSID(input)).toBe(false);

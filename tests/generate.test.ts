@@ -72,7 +72,7 @@ describe('generate() & generateFormatted()', () => {
         });
 
         it('proves bitmasking (& 31) when random bytes are all 0xFF', () => {
-            // 0xFF & 31 = 31 ('Z'). 15 'Z's produce check character 'X'.
+            // 0xFF & 31 = 31 ('Z'). 15 'Z's produce check character 'Z'.
             const spy = spyOn(globalThis.crypto, 'getRandomValues').mockImplementation((arr: ArrayBufferView) => {
                 (arr as Uint8Array).fill(0xff);
                 return arr;
@@ -80,7 +80,7 @@ describe('generate() & generateFormatted()', () => {
 
             try {
                 const id = generate();
-                expect(id).toBe('ZZZZZZZZZZZZZZZX' as SID);
+                expect(id).toBe('ZZZZZZZZZZZZZZZZ' as SID);
                 expect(verify(id)).toBe(true);
             } finally {
                 spy.mockRestore();
@@ -117,7 +117,7 @@ describe('generate() & generateFormatted()', () => {
 
             try {
                 const id = generate();
-                expect(id).toBe('0123456789ABCDEN' as SID);
+                expect(id).toBe('0123456789ABCDE7' as SID);
                 expect(verify(id)).toBe(true);
             } finally {
                 spy.mockRestore();

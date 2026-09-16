@@ -13,7 +13,7 @@ const { verify, generate } = require('@smart-science/sid');
 
 const id = generate();
 assert.equal(id.length, 16);
-assert.equal(verify('0123456789ABCDEN'), true);
+assert.equal(verify('0123456789ABCDE7'), true);
 assert.equal(verify(null), false);
 
 console.log('CJS smoke test passed.');

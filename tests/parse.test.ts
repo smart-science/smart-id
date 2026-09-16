@@ -16,51 +16,36 @@ import { quad, VALID_ID } from './helpers';
 // -------------------------------------------------------------------
 
 describe('parse() - Unicode Safety & Case Mapping', () => {
-    it('rejects Unicode case-mapping characters that uppercase to ASCII letters', () => {
-        // German eszett 'ß' previously expanded to 'SS' via toUpperCase() in v0.1.0, letting a 15-char string pass
-        expect(verify('E0000000000000ß')).toBe(false);
-        const parseEszett15 = parse('E0000000000000ß');
-        expect(parseEszett15.ok).toBe(false);
-        if (!parseEszett15.ok) {
-            expect(parseEszett15.error).toContain('Invalid ID length');
+    it('rejects Unicode characters whose case mapping would produce a valid ID', () => {
+        // Each input would become its valid ASCII equivalent under v0.1.0's toUpperCase() normalization,
+        // so these fixtures fail loudly if case mapping is ever reintroduced.
+        const lookalikes = [
+            // German eszett 'ß' expands to 'SS' (15 -> 16 characters)
+            { input: 'W0000000000000ß', ascii: 'W0000000000000SS', code: 'INVALID_LENGTH' },
+            // Latin small ligature fi 'ﬁ' (U+FB01) expands to 'FI', and 'I' repairs to '1'
+            { input: 'E0000000000000ﬁ', ascii: 'E0000000000000F1', code: 'INVALID_LENGTH' },
+            // Turkish dotless i 'ı' (U+0131) uppercases to 'I', which repairs to '1'
+            { input: '0ı23456789ABCDE7', ascii: '0123456789ABCDE7', code: 'INVALID_CHARACTER' },
+            // Latin small letter long s 'ſ' (U+017F) uppercases to 'S'
+            { input: '0123456789ABCDſE', ascii: '0123456789ABCDSE', code: 'INVALID_CHARACTER' },
+        ] as const;
+
+        for (const { input, ascii, code } of lookalikes) {
+            expect(verify(ascii)).toBe(true);
+            expect(verify(input)).toBe(false);
+            const res = parse(input);
+            expect(res.ok).toBe(false);
+            if (!res.ok) {
+                expect(res.code).toBe(code);
+            }
         }
 
-        // 16-character string with 'ß' reaches character check and is rejected
-        expect(verify('0123456789ABCDßN')).toBe(false);
-        const parseEszett16 = parse('0123456789ABCDßN');
-        expect(parseEszett16.ok).toBe(false);
-        if (!parseEszett16.ok) {
-            expect(parseEszett16.error).toContain('contains invalid character');
-        }
-
-        // Turkish dotless i 'ı' (U+0131) uppercases to 'I' which previously repaired to '1'
-        expect(verify('0ı23456789ABCDEN')).toBe(false);
-        const parseDotlessI = parse('0ı23456789ABCDEN');
-        expect(parseDotlessI.ok).toBe(false);
-        if (!parseDotlessI.ok) {
-            expect(parseDotlessI.error).toContain('contains invalid character');
-        }
-
-        // Latin small letter long s 'ſ' (U+017F) uppercases to 'S'
-        expect(verify('0123456789ABCDſN')).toBe(false);
-        const parseLongS = parse('0123456789ABCDſN');
-        expect(parseLongS.ok).toBe(false);
-        if (!parseLongS.ok) {
-            expect(parseLongS.error).toContain('contains invalid character');
-        }
-
-        // Latin small ligature fi 'ﬁ' (U+FB01) uppercases to 'FI'
-        expect(verify('0123456789ABCﬁN')).toBe(false);
-        const parseLigatureFi = parse('0123456789ABCﬁN');
-        expect(parseLigatureFi.ok).toBe(false);
-
-        // Latin-1 supplement character 'Ä' (U+00C4)
-        expect(verify('0123456789ABCDÄN')).toBe(false);
-        const parseUmlaut = parse('0123456789ABCDÄN');
-        expect(parseUmlaut.ok).toBe(false);
-        if (!parseUmlaut.ok) {
-            expect(parseUmlaut.error).toContain('contains invalid character');
-        }
+        // Latin-1 supplement character 'Ä' (U+00C4) has no ASCII mapping and fails the character check
+        expect(parse('0123456789ABCDÄ7')).toEqual({
+            ok: false,
+            code: 'INVALID_CHARACTER',
+            error: "Invalid ID: '0123456789ABCDÄ7' contains invalid character",
+        });
     });
 
     it('rejects multibyte emoji with exact 16 UTF-16 code units via character check', () => {
@@ -77,15 +62,15 @@ describe('parse() - Unicode Safety & Case Mapping', () => {
     });
 
     it('repairs uppercase I, L, O to canonical equivalents in raw and formatted input', () => {
-        expect(parse('OI23456789ABCDEN')).toEqual({ ok: true, data: VALID_ID });
-        expect(parse('OL23456789ABCDEN')).toEqual({ ok: true, data: VALID_ID });
-        expect(parse('OI23-4567-89AB-CDEN')).toEqual({ ok: true, data: VALID_ID });
-        expect(verify('OL23-4567-89AB-CDEN')).toBe(true);
+        expect(parse('OI23456789ABCDE7')).toEqual({ ok: true, data: VALID_ID });
+        expect(parse('OL23456789ABCDE7')).toEqual({ ok: true, data: VALID_ID });
+        expect(parse('OI23-4567-89AB-CDE7')).toEqual({ ok: true, data: VALID_ID });
+        expect(verify('OL23-4567-89AB-CDE7')).toBe(true);
     });
 
     it('repairs lowercase i, l, o inside formatted strings', () => {
-        // 'oi23-4567-89ab-cden' has lowercase 'o' -> '0', 'i' -> '1', 'a'->'A', 'b'->'B', 'c'->'C', 'd'->'D', 'e'->'E'
-        const messyFormatted = 'oi23-4567-89ab-cden';
+        // 'oi23-4567-89ab-cde7' has lowercase 'o' -> '0', 'i' -> '1', 'a'->'A', 'b'->'B', 'c'->'C', 'd'->'D', 'e'->'E'
+        const messyFormatted = 'oi23-4567-89ab-cde7';
         const parsed = parse(messyFormatted);
         expect(parsed).toEqual({
             ok: true,
@@ -94,7 +79,7 @@ describe('parse() - Unicode Safety & Case Mapping', () => {
         expect(verify(messyFormatted)).toBe(true);
 
         // Lowercase 'l' -> '1' repair inside formatted string
-        const messyWithL = 'ol23-4567-89ab-cden';
+        const messyWithL = 'ol23-4567-89ab-cde7';
         const parsedWithL = parse(messyWithL);
         expect(parsedWithL).toEqual({
             ok: true,
@@ -170,7 +155,7 @@ describe('parse() - Structural & Boundary Edge Cases', () => {
             code: 'INVALID_LENGTH',
             error: 'Invalid ID length: expected 16 (raw) or 19 (XXXX-XXXX-XXXX-XXXX) characters, got 15',
         });
-        expect(parse('0123456789ABCDEN0')).toEqual({
+        expect(parse('0123456789ABCDE70')).toEqual({
             ok: false,
             code: 'INVALID_LENGTH',
             error: 'Invalid ID length: expected 16 (raw) or 19 (XXXX-XXXX-XXXX-XXXX) characters, got 17',
@@ -187,7 +172,7 @@ describe('parse() - Structural & Boundary Edge Cases', () => {
         });
 
         // Length 20
-        const len20 = '0123-4567-89AB-CDEN0';
+        const len20 = '0123-4567-89AB-CDE70';
         expect(len20.length).toBe(20);
         expect(verify(len20)).toBe(false);
         expect(parse(len20)).toEqual({
@@ -242,27 +227,27 @@ describe('parse() - Structural & Boundary Edge Cases', () => {
         } as const;
 
         // Missing hyphen at index 4
-        const missingHyphen4 = '012345678-89AB-CDEN';
+        const missingHyphen4 = '012345678-89AB-CDE7';
         expect(verify(missingHyphen4)).toBe(false);
         expect(parse(missingHyphen4)).toEqual(expectedFormatError);
 
         // Missing hyphen at index 9
-        const missingHyphen9 = '0123-4567889AB-CDEN';
+        const missingHyphen9 = '0123-4567889AB-CDE7';
         expect(verify(missingHyphen9)).toBe(false);
         expect(parse(missingHyphen9)).toEqual(expectedFormatError);
 
         // Missing hyphen at index 14
-        const missingHyphen14 = '0123-4567-89ABCCDEN';
+        const missingHyphen14 = '0123-4567-89ABCCDE7';
         expect(verify(missingHyphen14)).toBe(false);
         expect(parse(missingHyphen14)).toEqual(expectedFormatError);
 
         // Extra hyphen before position 4 (e.g. index 0)
-        const hyphenAt0 = '-123-4567-89AB-CDEN';
+        const hyphenAt0 = '-123-4567-89AB-CDE7';
         expect(verify(hyphenAt0)).toBe(false);
         expect(parse(hyphenAt0)).toEqual(expectedFormatError);
 
         // Extra hyphen between groups (e.g. index 5)
-        const doubleHyphen5 = '0123--567-89AB-CDEN';
+        const doubleHyphen5 = '0123--567-89AB-CDE7';
         expect(verify(doubleHyphen5)).toBe(false);
         expect(parse(doubleHyphen5)).toEqual(expectedFormatError);
 

@@ -32,26 +32,26 @@ npm install @smart-science/sid
 import { format, generate, generateFormatted, parse, verify } from '@smart-science/sid';
 
 // 1. Generation
-const id = generate(); // '0123456789ABCDEN'
-const formatted = generateFormatted(); // '0123-4567-89AB-CDEN'
+const id = generate(); // '0123456789ABCDE7'
+const formatted = generateFormatted(); // '0123-4567-89AB-CDE7'
 
 // 2. Verification
 verify(id); // true
 verify('INVALID-ID'); // false
 
 // 3. Parsing & Repair (whitespace, lowercase, ambiguous characters 'I', 'L', 'O')
-const res = parse('  oI23-4567-89ab-cden  ');
+const res = parse('  oI23-4567-89ab-cde7  ');
 if (res.ok) {
-    console.log(res.data); // '0123456789ABCDEN'
+    console.log(res.data); // '0123456789ABCDE7'
 } else {
     console.error(res.code, res.error);
 }
 
 // 4. Formatting
-const formattedResult = format(id); // { ok: true, data: '0123-4567-89AB-CDEN' }
+const formattedResult = format(id); // { ok: true, data: '0123-4567-89AB-CDE7' }
 
 // 5. Back to canonical form
-const canonical = parse('0123-4567-89AB-CDEN'); // { ok: true, data: '0123456789ABCDEN' }
+const canonical = parse('0123-4567-89AB-CDE7'); // { ok: true, data: '0123456789ABCDE7' }
 ```
 
 ---

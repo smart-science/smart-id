@@ -49,7 +49,7 @@ const CHAR_POOL = [
 ];
 
 /** Valid seed IDs that mutations start from, so a meaningful share of inputs stays parseable. */
-const SEED_IDS = [VALID_ID, VALID_ID_2, VALID_ID_ALL_ZERO, 'ZZZZZZZZZZZZZZZX', 'K4MR7T2PQ9XH3WNY'];
+const SEED_IDS = [VALID_ID, VALID_ID_2, VALID_ID_ALL_ZERO, 'ZZZZZZZZZZZZZZZZ', 'K4MR7T2PQ9XH3WNA'];
 
 const SEED = 0x51d_2026;
 const ITERATIONS = 10_000;

@@ -68,9 +68,9 @@ for (const c of 'Oo') {
     DECODE[c.charCodeAt(0)] = 0;
 }
 
-/** Calculates Modulo-32 check character index for a weighted payload sum. */
+/** Check value for a weighted payload sum: solves `sum + 3 * check ≡ 0 (mod 32)`. */
 function checkValue(sum: number): number {
-    return (32 - (sum % 32)) % 32;
+    return ((32 - (sum % 32)) * 11) % 32;
 }
 
 // -------------------------------------------------------------------

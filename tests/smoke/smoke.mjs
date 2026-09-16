@@ -15,8 +15,8 @@ const id = generate();
 assert.equal(id.length, 16);
 assert.ok(verify(id));
 assert.ok(verify(generateFormatted()));
-assert.deepEqual(parse('0123-4567-89AB-CDEN'), { ok: true, data: '0123456789ABCDEN' });
-assert.deepEqual(format('0123456789ABCDEN'), { ok: true, data: '0123-4567-89AB-CDEN' });
+assert.deepEqual(parse('0123-4567-89AB-CDE7'), { ok: true, data: '0123456789ABCDE7' });
+assert.deepEqual(format('0123456789ABCDE7'), { ok: true, data: '0123-4567-89AB-CDE7' });
 assert.equal(verify(null), false);
 
 console.log('ESM smoke test passed.');
