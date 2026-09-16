@@ -6,4 +6,5 @@ pathIgnorePatterns = [
 ]
 coverage = true
 coverageSkipTestFiles = true
+coveragePathIgnorePatterns = ["tests/**"]
 coverageThreshold = 1.0
