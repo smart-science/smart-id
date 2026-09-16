@@ -125,6 +125,36 @@ export function verify(input: unknown): boolean {
 }
 
 /**
+ * **Type guard verifying if an input is strictly a canonical 16-character SID.**
+ *
+ * Unlike `verify()`, which accepts formatted (`XXXX-XXXX-XXXX-XXXX`), lowercase,
+ * whitespace-padded, or repaired variants, `isSID()` returns `true` *only* if the input
+ * is already an exact canonical unhyphenated uppercase 16-character `SID`.
+ *
+ * @param input - Value to validate.
+ * @returns `true` if input is an exact canonical `SID`, narrowing the type.
+ */
+export function isSID(input: unknown): input is SID {
+    const parsed = parse(input);
+    return parsed.ok && parsed.data === input;
+}
+
+/**
+ * **Type guard verifying if an input is strictly a canonical formatted SID (`XXXX-XXXX-XXXX-XXXX`).**
+ *
+ * Unlike `verify()`, which accepts unhyphenated, lowercase, whitespace-padded, or repaired
+ * variants, `isFormattedSID()` returns `true` *only* if the input is already an exact
+ * canonical 19-character hyphenated uppercase `FormattedSID`.
+ *
+ * @param input - Value to validate.
+ * @returns `true` if input is an exact canonical `FormattedSID`, narrowing the type.
+ */
+export function isFormattedSID(input: unknown): input is FormattedSID {
+    const formatted = format(input);
+    return formatted.ok && formatted.data === input;
+}
+
+/**
  * **Parses and validates an identifier into a canonical `SID`.**
  *
  * - trims whitespace

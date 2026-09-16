@@ -12,6 +12,8 @@ import type {
     format,
     generate,
     generateFormatted,
+    isFormattedSID,
+    isSID,
     parse,
     Result,
     SID,
@@ -41,6 +43,14 @@ export type Test_Format_ReturnType = Expect<Equal<ReturnType<typeof format>, Res
 
 // 2.6 unformat returns canonical SID.
 export type Test_Unformat_ReturnType = Expect<Equal<ReturnType<typeof unformat>, SID>>;
+
+// 2.7 isSID is a type guard narrowing unknown to input is SID.
+export type Test_IsSID_TypeGuard = Expect<Extends<typeof isSID, (input: unknown) => input is SID>>;
+
+// 2.8 isFormattedSID is a type guard narrowing unknown to input is FormattedSID.
+export type Test_IsFormattedSID_TypeGuard = Expect<
+    Extends<typeof isFormattedSID, (input: unknown) => input is FormattedSID>
+>;
 
 // -------------------------------------------------------------------
 // 3. Nominal Branding & Subtype Invariants
@@ -111,3 +121,19 @@ if (result.ok) {
     // @ts-expect-error Property 'data' does not exist on failure branch.
     const _dataOnFailure = result.data;
 }
+
+// 5.5 isSID narrows unknown to SID.
+declare const unknownValue: unknown;
+declare const checkIsSID: typeof isSID;
+if (checkIsSID(unknownValue)) {
+    const _narrowedSID: SID = unknownValue;
+    const _isString: string = unknownValue;
+}
+
+// 5.6 isFormattedSID narrows unknown to FormattedSID.
+declare const checkIsFormattedSID: typeof isFormattedSID;
+if (checkIsFormattedSID(unknownValue)) {
+    const _narrowedFormatted: FormattedSID = unknownValue;
+    const _isString: string = unknownValue;
+}
+
