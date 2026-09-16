@@ -102,7 +102,7 @@ describe('SID Module', () => {
         it('rejects high-byte unicode and multibyte characters safely', () => {
             expect(verify('0123456789ABCD\u01000')).toBe(false);
             expect(verify('0123456789ABCD\uFFFD0')).toBe(false);
-            expect(verify('0123456789ABCD😊0')).toBe(false);
+            expect(verify('0123456789ABC😊0')).toBe(false);
             expect(parse('0123456789ABCD\u01000').ok).toBe(false);
         });
 

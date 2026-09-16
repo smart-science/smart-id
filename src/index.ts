@@ -34,18 +34,7 @@ export type Result<T> =
       };
 
 // -------------------------------------------------------------------
-// 2. Regular Expressions
-// -------------------------------------------------------------------
-
-/**
- * **Matches uppercase ambiguous Crockford Base32 characters for replacement.**
- * - `I`, `L` -> `1`.
- * - `O` -> `0`.
- */
-const REGEX_AMBIGUOUS = /[ILO]/g;
-
-// -------------------------------------------------------------------
-// 3. Constants & Dictionaries
+// 2. Constants & Dictionaries
 // -------------------------------------------------------------------
 
 /** Canonical Crockford Base32 alphabet: excludes [`I`, `L`, `O`, `U`]. */
@@ -57,14 +46,28 @@ const PAYLOAD_LENGTH = 15;
 /** Required length of the complete raw identifier incl. checksum. */
 const TOTAL_LENGTH = 16;
 
-/** Direct byte lookup table mapping character codes to numerical values (0-31), `-1` for invalid characters. */
-const CHAR_LOOKUP = new Int8Array(256).fill(-1);
+/** ASCII decode table: canonical + lowercase chars, `I/i/L/l` -> 1, `O/o` -> 0, else -1. */
+const DECODE = new Int8Array(128).fill(-1);
 for (let i = 0; i < ALPHABET.length; i++) {
-    CHAR_LOOKUP[ALPHABET.charCodeAt(i)] = i;
+    const charCode = ALPHABET.charCodeAt(i);
+    DECODE[charCode] = i;
+    const lowerCharCode = ALPHABET.toLowerCase().charCodeAt(i);
+    DECODE[lowerCharCode] = i;
+}
+for (const c of 'IiLl') {
+    DECODE[c.charCodeAt(0)] = 1;
+}
+for (const c of 'Oo') {
+    DECODE[c.charCodeAt(0)] = 0;
+}
+
+/** Calculates Modulo-32 check character index for a weighted payload sum. */
+function checkValue(sum: number): number {
+    return (32 - (sum % 32)) % 32;
 }
 
 // -------------------------------------------------------------------
-// 4. Exported Functions
+// 3. Exported Functions
 // -------------------------------------------------------------------
 
 /**
@@ -85,11 +88,11 @@ export function generate(): SID {
     for (let i = 0; i < PAYLOAD_LENGTH; i++) {
         const val = (bytes[i] ?? 0) & 31;
         sum += val * (i % 2 === 0 ? 1 : 3);
-        payload += ALPHABET[val];
+        payload += ALPHABET[val] ?? '';
     }
 
-    const checkValue = (32 - (sum % 32)) % 32;
-    return (payload + ALPHABET[checkValue]) as SID;
+    const check = checkValue(sum);
+    return (payload + (ALPHABET[check] ?? '')) as SID;
 }
 
 /**
@@ -118,12 +121,7 @@ export function generateFormatted(): FormattedSID {
  * @returns `true` if valid, else `false`.
  */
 export function verify(input: unknown): boolean {
-    const normalized = normalize(input);
-    if (!normalized.ok) {
-        return false;
-    }
-
-    return validateNormalized(normalized.data) === 0;
+    return parse(input).ok;
 }
 
 /**
@@ -149,21 +147,30 @@ export function parse(input: unknown): Result<SID> {
         return normalized;
     }
 
-    const status = validateNormalized(normalized.data);
-    if (status === 1) {
-        return {
-            ok: false,
-            error: `Invalid ID: '${normalized.data}' contains invalid character`,
-        };
-    }
-    if (status === 2) {
-        return {
-            ok: false,
-            error: `Invalid ID: '${normalized.data}' failed checksum validation`,
-        };
+    const clean = normalized.data;
+    let canonical = '';
+    let sum = 0;
+    for (let i = 0; i < TOTAL_LENGTH; i++) {
+        const code = clean.charCodeAt(i);
+        const val = code < 128 ? (DECODE[code] ?? -1) : -1;
+        if (val === -1) {
+            return {
+                ok: false,
+                error: `Invalid ID: '${clean}' contains invalid character`,
+            };
+        }
+        if (i < PAYLOAD_LENGTH) {
+            sum += val * (i % 2 === 0 ? 1 : 3);
+        } else if (val !== checkValue(sum)) {
+            return {
+                ok: false,
+                error: `Invalid ID: '${clean}' failed checksum validation`,
+            };
+        }
+        canonical += ALPHABET[val] ?? '';
     }
 
-    return { ok: true, data: normalized.data as SID };
+    return { ok: true, data: canonical as SID };
 }
 
 /**
@@ -204,7 +211,7 @@ export function unformat(id: FormattedSID): SID {
 }
 
 // -------------------------------------------------------------------
-// 5. Internal Helper Functions
+// 4. Internal Helper Functions
 // -------------------------------------------------------------------
 
 /**
@@ -221,11 +228,10 @@ function toQuadString(id: SID): FormattedSID {
  * **Normalizes raw input into canonical 16-character format.**
  *
  * - trims whitespace
- * - normalizes lowercase characters to uppercase
- * - repairs ambiguous characters (`I`/`L` -> `1`, `O` -> `0`)
  * - validates hyphen positions (`XXXX-XXXX-XXXX-XXXX`) and strips them
  *
- * Does not validate alphabet membership or checksum.
+ * Does not change case, repair ambiguous characters, or validate alphabet membership and checksum;
+ * `parse()` does all of that in a single pass over the ASCII decode table.
  *
  * @param input - Raw input to normalize.
  * @returns Cleaned 16-character string on success, or an error result.
@@ -235,25 +241,22 @@ function normalize(input: unknown): Result<string> {
         return { ok: false, error: `Expected string input, received ${typeof input}` };
     }
 
-    const upper = input
-        .trim()
-        .toUpperCase()
-        .replace(REGEX_AMBIGUOUS, (match) => (match === 'O' ? '0' : '1'));
+    const trimmed = input.trim();
 
-    if (upper.length === TOTAL_LENGTH) {
-        return { ok: true, data: upper };
+    if (trimmed.length === TOTAL_LENGTH) {
+        return { ok: true, data: trimmed };
     }
 
-    if (upper.length === 19) {
+    if (trimmed.length === 19) {
         if (
-            upper.indexOf('-', 0) === 4 &&
-            upper.indexOf('-', 5) === 9 &&
-            upper.indexOf('-', 10) === 14 &&
-            upper.indexOf('-', 15) === -1
+            trimmed.indexOf('-', 0) === 4 &&
+            trimmed.indexOf('-', 5) === 9 &&
+            trimmed.indexOf('-', 10) === 14 &&
+            trimmed.indexOf('-', 15) === -1
         ) {
             return {
                 ok: true,
-                data: upper.slice(0, 4) + upper.slice(5, 9) + upper.slice(10, 14) + upper.slice(15),
+                data: trimmed.slice(0, 4) + trimmed.slice(5, 9) + trimmed.slice(10, 14) + trimmed.slice(15),
             };
         }
         return {
@@ -264,34 +267,6 @@ function normalize(input: unknown): Result<string> {
 
     return {
         ok: false,
-        error: `Invalid ID length: expected ${TOTAL_LENGTH} characters, got ${upper.length}`,
+        error: `Invalid ID length: expected ${TOTAL_LENGTH} characters, got ${trimmed.length}`,
     };
-}
-
-/**
- * **Validates alphabet membership and checksum on a 16-character string in a single pass.**
- *
- * @param clean - Guaranteed 16-character pre-normalized string without delimiters.
- * @returns Status code: `0` for valid, `1` for invalid alphabet character, `2` for checksum mismatch.
- */
-function validateNormalized(clean: string): 0 | 1 | 2 {
-    // INVARIANT: modulo-32 arithmetic cannot detect adjacent transpositions with char distance 16.
-    let sum = 0;
-    for (let i = 0; i < PAYLOAD_LENGTH; i++) {
-        const code = clean.charCodeAt(i);
-        const val = code < 256 ? (CHAR_LOOKUP[code] ?? -1) : -1;
-        if (val === -1) {
-            return 1;
-        }
-        // alternating odd weights coprime to 32 catch all single-char substitutions.
-        sum += val * (i % 2 === 0 ? 1 : 3);
-    }
-
-    // validate the 16th check char directly via table lookup.
-    const checkCode = clean.charCodeAt(PAYLOAD_LENGTH);
-    const checkVal = checkCode < 256 ? (CHAR_LOOKUP[checkCode] ?? -1) : -1;
-    if (checkVal === -1) {
-        return 1;
-    }
-    return checkVal === (32 - (sum % 32)) % 32 ? 0 : 2;
 }
