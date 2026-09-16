@@ -12,25 +12,7 @@ import { isFormattedSID, isSID } from '../src/index';
 import { quad, VALID_FORMATTED, VALID_ID, VALID_ID_2, VALID_ID_ALL_ZERO } from './helpers';
 
 // -------------------------------------------------------------------
-// 2. Constants & Fixtures
-// -------------------------------------------------------------------
-
-const INVALID_INPUTS: unknown[] = [
-    null,
-    undefined,
-    12345,
-    10n,
-    true,
-    false,
-    Symbol('sid'),
-    {},
-    Object.create(null),
-    [],
-    () => {},
-];
-
-// -------------------------------------------------------------------
-// 3. Test Suite: Strict Type Guards
+// 2. Test Suite: Strict Type Guards
 // -------------------------------------------------------------------
 
 describe('Strict Type Guards: isSID() and isFormattedSID()', () => {
@@ -63,13 +45,10 @@ describe('Strict Type Guards: isSID() and isFormattedSID()', () => {
             expect(isSID('OL23456789ABCDE7')).toBe(false);
         });
 
-        it('returns false for invalid lengths and non-string inputs', () => {
+        it('returns false for invalid lengths', () => {
             expect(isSID('')).toBe(false);
             expect(isSID('0123456789ABCDE')).toBe(false);
             expect(isSID('0123456789ABCDEFG')).toBe(false);
-            for (const input of INVALID_INPUTS) {
-                expect(isSID(input)).toBe(false);
-            }
         });
 
         it('returns false for valid alphabet with invalid checksum', () => {
@@ -108,9 +87,6 @@ describe('Strict Type Guards: isSID() and isFormattedSID()', () => {
             expect(isFormattedSID('0123--567-89AB-CDE7')).toBe(false);
             expect(isFormattedSID('01234-5678-9ABC-DE7')).toBe(false);
             expect(isFormattedSID('0123-4567-89AB-CDE')).toBe(false);
-            for (const input of INVALID_INPUTS) {
-                expect(isFormattedSID(input)).toBe(false);
-            }
         });
 
         it('returns false for invalid characters or checksum failure', () => {

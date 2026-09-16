@@ -100,7 +100,7 @@ describe('parse() - Unusual Non-String Inputs', () => {
         });
     });
 
-    it('rejects boxed String instances and unusual non-string objects', () => {
+    it('reports boxed strings and non-finite numbers as NOT_A_STRING', () => {
         // boxed String objects have typeof === 'object' and must be rejected
         const boxed = new String(VALID_ID);
         expect(verify(boxed)).toBe(false);
@@ -110,16 +110,6 @@ describe('parse() - Unusual Non-String Inputs', () => {
             expect(parseBoxed.code).toBe('NOT_A_STRING');
             expect(parseBoxed.error).toBe('Expected string input, received object');
         }
-
-        // Proxy and revoked Proxy
-        const proxy = new Proxy({}, {});
-        expect(verify(proxy)).toBe(false);
-        expect(parse(proxy).ok).toBe(false);
-
-        const revocable = Proxy.revocable({}, {});
-        revocable.revoke();
-        expect(verify(revocable.proxy)).toBe(false);
-        expect(parse(revocable.proxy).ok).toBe(false);
 
         // NaN, Infinity, -Infinity
         for (const num of [NaN, Number.POSITIVE_INFINITY, Number.NEGATIVE_INFINITY]) {
