@@ -96,3 +96,142 @@ describe('parse() - Unicode Safety & Case Mapping', () => {
         expect(verify(messyWithL)).toBe(true);
     });
 });
+
+describe('parse() - Unusual Non-String Inputs [F-60]', () => {
+    it('rejects boxed String instances and unusual non-string objects', () => {
+        // boxed String objects have typeof === 'object' and must be rejected
+        // biome-ignore lint/style/useNumberNamespace: testing boxed String
+        const boxed = new String(VALID_ID);
+        expect(verify(boxed)).toBe(false);
+        const parseBoxed = parse(boxed);
+        expect(parseBoxed.ok).toBe(false);
+        if (!parseBoxed.ok) {
+            expect(parseBoxed.error).toContain('Expected string input');
+        }
+
+        // Proxy and revoked Proxy
+        const proxy = new Proxy({}, {});
+        expect(verify(proxy)).toBe(false);
+        expect(parse(proxy).ok).toBe(false);
+
+        const revocable = Proxy.revocable({}, {});
+        revocable.revoke();
+        expect(verify(revocable.proxy)).toBe(false);
+        expect(parse(revocable.proxy).ok).toBe(false);
+
+        // NaN, Infinity, -Infinity
+        for (const num of [NaN, Number.POSITIVE_INFINITY, Number.NEGATIVE_INFINITY]) {
+            expect(verify(num)).toBe(false);
+            const res = parse(num);
+            expect(res.ok).toBe(false);
+            if (!res.ok) {
+                expect(res.error).toContain('Expected string input');
+            }
+        }
+    });
+});
+
+describe('parse() - Structural & Boundary Edge Cases [F-55, F-56, F-57, F-58]', () => {
+    it('rejects 16-character input containing misplaced hyphens with invalid character error [F-56]', () => {
+        const hyphenated16 = '0123-456789ABCDE';
+        expect(hyphenated16.length).toBe(16);
+        expect(verify(hyphenated16)).toBe(false);
+
+        const res = parse(hyphenated16);
+        expect(res).toEqual({
+            ok: false,
+            error: `Invalid ID: '${hyphenated16}' contains invalid character`,
+        });
+    });
+
+    it('rejects boundary lengths around 19 and whitespace-only strings [F-57]', () => {
+        // Length 18
+        const len18 = '0123456789ABCDEF01';
+        expect(len18.length).toBe(18);
+        expect(verify(len18)).toBe(false);
+        expect(parse(len18)).toEqual({
+            ok: false,
+            error: 'Invalid ID length: expected 16 characters, got 18',
+        });
+
+        // Length 20
+        const len20 = '0123-4567-89AB-CDEN0';
+        expect(len20.length).toBe(20);
+        expect(verify(len20)).toBe(false);
+        expect(parse(len20)).toEqual({
+            ok: false,
+            error: 'Invalid ID length: expected 16 characters, got 20',
+        });
+
+        // Whitespace-only string trims to empty string (length 0)
+        expect(verify('   ')).toBe(false);
+        expect(parse('   ')).toEqual({
+            ok: false,
+            error: 'Invalid ID length: expected 16 characters, got 0',
+        });
+
+        // Verifies length is measured AFTER trimming
+        const raw18 = `  ${VALID_ID}`;
+        expect(raw18.length).toBe(18);
+        expect(verify(raw18)).toBe(true);
+        expect(parse(raw18)).toEqual({
+            ok: true,
+            data: VALID_ID,
+        });
+    });
+
+    it('returns character and checksum errors for 19-char formatted inputs with valid hyphens [F-55]', () => {
+        // Valid hyphen placement but invalid Crockford Base32 character 'U'
+        const invalidCharFormatted = '0123-4567-89AB-CDEU';
+        expect(verify(invalidCharFormatted)).toBe(false);
+        expect(parse(invalidCharFormatted)).toEqual({
+            ok: false,
+            error: "Invalid ID: '0123456789ABCDEU' contains invalid character",
+        });
+
+        // Valid hyphen placement and valid alphabet, but invalid checksum
+        const invalidChecksumFormatted = '0123-4567-89AB-CDEF';
+        expect(verify(invalidChecksumFormatted)).toBe(false);
+        expect(parse(invalidChecksumFormatted)).toEqual({
+            ok: false,
+            error: "Invalid ID: '0123456789ABCDEF' failed checksum validation",
+        });
+    });
+
+    it('triggers every hyphen failure branch for 19-character inputs [F-58]', () => {
+        const expectedFormatError = {
+            ok: false,
+            error: 'Invalid ID format: expected XXXX-XXXX-XXXX-XXXX with hyphens at positions 4, 9, 14',
+        } as const;
+
+        // Missing hyphen at index 4
+        const missingHyphen4 = '012345678-89AB-CDEN';
+        expect(verify(missingHyphen4)).toBe(false);
+        expect(parse(missingHyphen4)).toEqual(expectedFormatError);
+
+        // Missing hyphen at index 9
+        const missingHyphen9 = '0123-4567889AB-CDEN';
+        expect(verify(missingHyphen9)).toBe(false);
+        expect(parse(missingHyphen9)).toEqual(expectedFormatError);
+
+        // Missing hyphen at index 14
+        const missingHyphen14 = '0123-4567-89ABCCDEN';
+        expect(verify(missingHyphen14)).toBe(false);
+        expect(parse(missingHyphen14)).toEqual(expectedFormatError);
+
+        // Extra hyphen before position 4 (e.g. index 0)
+        const hyphenAt0 = '-123-4567-89AB-CDEN';
+        expect(verify(hyphenAt0)).toBe(false);
+        expect(parse(hyphenAt0)).toEqual(expectedFormatError);
+
+        // Extra hyphen between groups (e.g. index 5)
+        const doubleHyphen5 = '0123--567-89AB-CDEN';
+        expect(verify(doubleHyphen5)).toBe(false);
+        expect(parse(doubleHyphen5)).toEqual(expectedFormatError);
+
+        // Extra hyphen after position 15 (e.g. index 18)
+        const trailingHyphen = '0123-4567-89AB-CDE-';
+        expect(verify(trailingHyphen)).toBe(false);
+        expect(parse(trailingHyphen)).toEqual(expectedFormatError);
+    });
+});
