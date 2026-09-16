@@ -1,0 +1,32 @@
+/*
+ * Copyright 2026 Martin Winkler <martin.winkler.dev@gmail.com>
+ * SPDX-License-Identifier: UNLICENSED
+ */
+
+import { parse, type FormattedSID, type SID } from '../src/index';
+
+/** Canonical fixed valid IDs for reproducible deterministic tests (v0.1 checksum). */
+export const VALID_ID = '0123456789ABCDEN' as SID;
+export const VALID_ID_2 = 'VWXYZ01234567896' as SID;
+export const VALID_ID_ALL_ZERO = '0000000000000000' as SID;
+export const VALID_FORMATTED = '0123-4567-89AB-CDEN' as FormattedSID;
+
+/**
+ * Formats a 16-character string into quad groups `XXXX-XXXX-XXXX-XXXX`.
+ * Avoids repetitive inline template literal string slicing across tests.
+ */
+export function quad(id: string): FormattedSID {
+    return `${id.slice(0, 4)}-${id.slice(4, 8)}-${id.slice(8, 12)}-${id.slice(12, 16)}` as FormattedSID;
+}
+
+/**
+ * Asserts that parsing succeeds and unwraps the canonical SID.
+ * Throws a descriptive error if parsing fails, eliminating boilerplate guards in tests.
+ */
+export function mustParse(input: unknown): SID {
+    const result = parse(input);
+    if (!result.ok) {
+        throw new Error(`mustParse failed for input '${String(input)}': ${result.error}`);
+    }
+    return result.data;
+}
