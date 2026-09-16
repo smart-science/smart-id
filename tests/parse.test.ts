@@ -8,15 +8,15 @@
 // -------------------------------------------------------------------
 
 import { describe, expect, it } from 'bun:test';
-import { parse, verify } from '../src/index';
-import { VALID_ID } from './helpers';
+import { format, parse, unformat, verify } from '../src/index';
+import { quad, VALID_FORMATTED, VALID_ID } from './helpers';
 
 // -------------------------------------------------------------------
 // 2. Test Suite: parse() & Unicode Normalization
 // -------------------------------------------------------------------
 
 describe('parse() - Unicode Safety & Case Mapping', () => {
-    it('rejects Unicode case-mapping characters that uppercase to ASCII letters [F-53]', () => {
+    it('rejects Unicode case-mapping characters that uppercase to ASCII letters', () => {
         // German eszett 'ß' previously expanded to 'SS' via toUpperCase() in v0.1.0, letting a 15-char string pass
         expect(verify('E0000000000000ß')).toBe(false);
         const parseEszett15 = parse('E0000000000000ß');
@@ -63,7 +63,7 @@ describe('parse() - Unicode Safety & Case Mapping', () => {
         }
     });
 
-    it('rejects multibyte emoji with exact 16 UTF-16 code units via character check [F-44]', () => {
+    it('rejects multibyte emoji with exact 16 UTF-16 code units via character check', () => {
         // '0123456789ABC' (13) + '😊' (2) + '0' (1) = exactly 16 UTF-16 code units
         const emoji16 = '0123456789ABC😊0';
         expect(emoji16.length).toBe(16);
@@ -76,7 +76,14 @@ describe('parse() - Unicode Safety & Case Mapping', () => {
         }
     });
 
-    it('repairs lowercase i, l, o inside formatted strings [F-54]', () => {
+    it('repairs uppercase I, L, O to canonical equivalents in raw and formatted input', () => {
+        expect(parse('OI23456789ABCDEN')).toEqual({ ok: true, data: VALID_ID });
+        expect(parse('OL23456789ABCDEN')).toEqual({ ok: true, data: VALID_ID });
+        expect(parse('OI23-4567-89AB-CDEN')).toEqual({ ok: true, data: VALID_ID });
+        expect(verify('OL23-4567-89AB-CDEN')).toBe(true);
+    });
+
+    it('repairs lowercase i, l, o inside formatted strings', () => {
         // 'oi23-4567-89ab-cden' has lowercase 'o' -> '0', 'i' -> '1', 'a'->'A', 'b'->'B', 'c'->'C', 'd'->'D', 'e'->'E'
         const messyFormatted = 'oi23-4567-89ab-cden';
         const parsed = parse(messyFormatted);
@@ -97,7 +104,7 @@ describe('parse() - Unicode Safety & Case Mapping', () => {
     });
 });
 
-describe('parse() - Unusual Non-String Inputs [F-60]', () => {
+describe('parse() - Unusual Non-String Inputs', () => {
     it('rejects boxed String instances and unusual non-string objects', () => {
         // boxed String objects have typeof === 'object' and must be rejected
         // biome-ignore lint/style/useNumberNamespace: testing boxed String
@@ -131,8 +138,8 @@ describe('parse() - Unusual Non-String Inputs [F-60]', () => {
     });
 });
 
-describe('parse() - Structural & Boundary Edge Cases [F-55, F-56, F-57, F-58]', () => {
-    it('rejects 16-character input containing misplaced hyphens with invalid character error [F-56]', () => {
+describe('parse() - Structural & Boundary Edge Cases', () => {
+    it('rejects 16-character input containing misplaced hyphens with invalid character error', () => {
         const hyphenated16 = '0123-456789ABCDE';
         expect(hyphenated16.length).toBe(16);
         expect(verify(hyphenated16)).toBe(false);
@@ -144,7 +151,17 @@ describe('parse() - Structural & Boundary Edge Cases [F-55, F-56, F-57, F-58]', 
         });
     });
 
-    it('rejects boundary lengths around 19 and whitespace-only strings [F-57]', () => {
+    it('rejects boundary lengths around 19 and whitespace-only strings', () => {
+        // Lengths 15 and 17 (neighbours of the raw length 16)
+        expect(parse('0123456789ABCDE')).toEqual({
+            ok: false,
+            error: 'Invalid ID length: expected 16 characters, got 15',
+        });
+        expect(parse('0123456789ABCDEN0')).toEqual({
+            ok: false,
+            error: 'Invalid ID length: expected 16 characters, got 17',
+        });
+
         // Length 18
         const len18 = '0123456789ABCDEF01';
         expect(len18.length).toBe(18);
@@ -180,7 +197,7 @@ describe('parse() - Structural & Boundary Edge Cases [F-55, F-56, F-57, F-58]', 
         });
     });
 
-    it('returns character and checksum errors for 19-char formatted inputs with valid hyphens [F-55]', () => {
+    it('returns character and checksum errors for 19-char formatted inputs with valid hyphens', () => {
         // Valid hyphen placement but invalid Crockford Base32 character 'U'
         const invalidCharFormatted = '0123-4567-89AB-CDEU';
         expect(verify(invalidCharFormatted)).toBe(false);
@@ -198,7 +215,7 @@ describe('parse() - Structural & Boundary Edge Cases [F-55, F-56, F-57, F-58]', 
         });
     });
 
-    it('triggers every hyphen failure branch for 19-character inputs [F-58]', () => {
+    it('triggers every hyphen failure branch for 19-character inputs', () => {
         const expectedFormatError = {
             ok: false,
             error: 'Invalid ID format: expected XXXX-XXXX-XXXX-XXXX with hyphens at positions 4, 9, 14',
@@ -233,5 +250,68 @@ describe('parse() - Structural & Boundary Edge Cases [F-55, F-56, F-57, F-58]', 
         const trailingHyphen = '0123-4567-89AB-CDE-';
         expect(verify(trailingHyphen)).toBe(false);
         expect(parse(trailingHyphen)).toEqual(expectedFormatError);
+    });
+});
+
+describe('format()', () => {
+    it('normalizes, validates, and groups an unhyphenated SID', () => {
+        const id = VALID_ID;
+        const result = format(id);
+
+        expect(result).toEqual({
+            ok: true,
+            data: quad(id),
+        });
+    });
+
+    it('re-formats already-hyphenated input with lowercase repair', () => {
+        const id = VALID_ID;
+        const messy = `${id.slice(0, 4).toLowerCase()}-${id.slice(4, 8)}-${id.slice(8, 12)}-${id.slice(12, 16)}`;
+        const result = format(messy);
+
+        expect(result).toEqual({
+            ok: true,
+            data: quad(id),
+        });
+    });
+
+    it('formats input with leading and trailing whitespace cleanly', () => {
+        const id = VALID_ID;
+        const result = format(`  \t${id} \n `);
+        expect(result).toEqual({
+            ok: true,
+            data: quad(id),
+        });
+    });
+
+    it('delegates validation failures to parse without throwing', () => {
+        for (const badInput of ['INVALID_LENGTH', '0123456789ABCDU0', null, undefined, 12345, true, {}]) {
+            const parseRes = parse(badInput);
+            const formatRes = format(badInput);
+            expect(formatRes.ok).toBe(false);
+            if (!formatRes.ok && !parseRes.ok) {
+                expect(formatRes.error).toBe(parseRes.error);
+            }
+        }
+    });
+});
+
+describe('unformat() (deprecated)', () => {
+    it('unformats FormattedSID back to canonical 16-character SID', () => {
+        const formatted = VALID_FORMATTED;
+        const unformatted = unformat(formatted);
+
+        expect(unformatted).toHaveLength(16);
+        expect(unformatted).not.toContain('-');
+        expect(verify(unformatted)).toBe(true);
+    });
+
+    it('is the exact inverse of format() for valid canonical SIDs', () => {
+        const id = VALID_ID;
+        const formatted = format(id);
+        expect(formatted.ok).toBe(true);
+        if (formatted.ok) {
+            expect(unformat(formatted.data)).toBe(id);
+        }
     });
 });

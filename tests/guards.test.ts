@@ -33,7 +33,7 @@ const INVALID_INPUTS: unknown[] = [
 // 3. Test Suite: Strict Type Guards
 // -------------------------------------------------------------------
 
-describe('Strict Type Guards: isSID() and isFormattedSID() [F-05, F-61]', () => {
+describe('Strict Type Guards: isSID() and isFormattedSID()', () => {
     describe('isSID()', () => {
         it('returns true only for exact canonical 16-character uppercase identifiers', () => {
             expect(isSID(VALID_ID)).toBe(true);

@@ -5,6 +5,9 @@
 
 import { parse, type FormattedSID, type SID } from '../src/index';
 
+/** Canonical Crockford Base32 alphabet for tests. */
+export const ALPHABET = '0123456789ABCDEFGHJKMNPQRSTVWXYZ';
+
 /** Canonical fixed valid IDs for reproducible deterministic tests (v0.1 checksum). */
 export const VALID_ID = '0123456789ABCDEN' as SID;
 export const VALID_ID_2 = 'VWXYZ01234567896' as SID;
