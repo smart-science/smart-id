@@ -264,7 +264,7 @@ function normalize(input: unknown): SidResult<string> {
         return {
             ok: false,
             code: 'NOT_A_STRING',
-            error: `Expected string input, received ${typeof input}`,
+            error: `Expected string input, received ${input === null ? 'null' : typeof input}`,
         };
     }
 
@@ -289,13 +289,13 @@ function normalize(input: unknown): SidResult<string> {
         return {
             ok: false,
             code: 'INVALID_FORMAT',
-            error: 'Invalid ID format: expected XXXX-XXXX-XXXX-XXXX with hyphens at positions 4, 9, 14',
+            error: 'Invalid ID format: expected XXXX-XXXX-XXXX-XXXX with hyphens at positions 4, 9, 14 (0-based)',
         };
     }
 
     return {
         ok: false,
         code: 'INVALID_LENGTH',
-        error: `Invalid ID length: expected ${TOTAL_LENGTH} characters, got ${trimmed.length}`,
+        error: `Invalid ID length: expected 16 (raw) or 19 (XXXX-XXXX-XXXX-XXXX) characters, got ${trimmed.length}`,
     };
 }

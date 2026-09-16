@@ -16,6 +16,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - License changed from `UNLICENSED` to `Apache-2.0`.
 - **BREAKING**: `SID` and `FormattedSID` are branded with string-literal types; the runtime exports `SidBrand` and `FormattedSidBrand` are removed.
 - **BREAKING**: `Result<T>` is renamed to `SidResult<T>`.
+- Error messages reworded: `null` input is reported as `null`, both valid lengths are named, and hyphen positions are marked as 0-based. Branch on `code` instead of matching `error`.
 
 ### Removed
 

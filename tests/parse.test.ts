@@ -105,6 +105,16 @@ describe('parse() - Unicode Safety & Case Mapping', () => {
 });
 
 describe('parse() - Unusual Non-String Inputs', () => {
+    it('rejects null with explicit received null message', () => {
+        expect(verify(null)).toBe(false);
+        const res = parse(null);
+        expect(res).toEqual({
+            ok: false,
+            code: 'NOT_A_STRING',
+            error: 'Expected string input, received null',
+        });
+    });
+
     it('rejects boxed String instances and unusual non-string objects', () => {
         // boxed String objects have typeof === 'object' and must be rejected
         const boxed = new String(VALID_ID);
@@ -112,7 +122,8 @@ describe('parse() - Unusual Non-String Inputs', () => {
         const parseBoxed = parse(boxed);
         expect(parseBoxed.ok).toBe(false);
         if (!parseBoxed.ok) {
-            expect(parseBoxed.error).toContain('Expected string input');
+            expect(parseBoxed.code).toBe('NOT_A_STRING');
+            expect(parseBoxed.error).toBe('Expected string input, received object');
         }
 
         // Proxy and revoked Proxy
@@ -131,7 +142,8 @@ describe('parse() - Unusual Non-String Inputs', () => {
             const res = parse(num);
             expect(res.ok).toBe(false);
             if (!res.ok) {
-                expect(res.error).toContain('Expected string input');
+                expect(res.code).toBe('NOT_A_STRING');
+                expect(res.error).toBe('Expected string input, received number');
             }
         }
     });
@@ -156,12 +168,12 @@ describe('parse() - Structural & Boundary Edge Cases', () => {
         expect(parse('0123456789ABCDE')).toEqual({
             ok: false,
             code: 'INVALID_LENGTH',
-            error: 'Invalid ID length: expected 16 characters, got 15',
+            error: 'Invalid ID length: expected 16 (raw) or 19 (XXXX-XXXX-XXXX-XXXX) characters, got 15',
         });
         expect(parse('0123456789ABCDEN0')).toEqual({
             ok: false,
             code: 'INVALID_LENGTH',
-            error: 'Invalid ID length: expected 16 characters, got 17',
+            error: 'Invalid ID length: expected 16 (raw) or 19 (XXXX-XXXX-XXXX-XXXX) characters, got 17',
         });
 
         // Length 18
@@ -171,7 +183,7 @@ describe('parse() - Structural & Boundary Edge Cases', () => {
         expect(parse(len18)).toEqual({
             ok: false,
             code: 'INVALID_LENGTH',
-            error: 'Invalid ID length: expected 16 characters, got 18',
+            error: 'Invalid ID length: expected 16 (raw) or 19 (XXXX-XXXX-XXXX-XXXX) characters, got 18',
         });
 
         // Length 20
@@ -181,7 +193,7 @@ describe('parse() - Structural & Boundary Edge Cases', () => {
         expect(parse(len20)).toEqual({
             ok: false,
             code: 'INVALID_LENGTH',
-            error: 'Invalid ID length: expected 16 characters, got 20',
+            error: 'Invalid ID length: expected 16 (raw) or 19 (XXXX-XXXX-XXXX-XXXX) characters, got 20',
         });
 
         // Whitespace-only string trims to empty string (length 0)
@@ -189,7 +201,7 @@ describe('parse() - Structural & Boundary Edge Cases', () => {
         expect(parse('   ')).toEqual({
             ok: false,
             code: 'INVALID_LENGTH',
-            error: 'Invalid ID length: expected 16 characters, got 0',
+            error: 'Invalid ID length: expected 16 (raw) or 19 (XXXX-XXXX-XXXX-XXXX) characters, got 0',
         });
 
         // Verifies length is measured AFTER trimming
@@ -226,7 +238,7 @@ describe('parse() - Structural & Boundary Edge Cases', () => {
         const expectedFormatError = {
             ok: false,
             code: 'INVALID_FORMAT',
-            error: 'Invalid ID format: expected XXXX-XXXX-XXXX-XXXX with hyphens at positions 4, 9, 14',
+            error: 'Invalid ID format: expected XXXX-XXXX-XXXX-XXXX with hyphens at positions 4, 9, 14 (0-based)',
         } as const;
 
         // Missing hyphen at index 4
