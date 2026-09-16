@@ -1,6 +1,6 @@
 /*
- * Copyright 2026 Martin Winkler <martin.winkler.dev@gmail.com>
- * SPDX-License-Identifier: UNLICENSED
+ * Copyright 2026 Martin Winkler
+ * SPDX-License-Identifier: Apache-2.0
  */
 
 // -------------------------------------------------------------------

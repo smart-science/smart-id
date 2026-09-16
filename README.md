@@ -117,3 +117,9 @@ Uses Crockford Base32 (`0-9`, `A-Z` excluding `I`, `L`, `O`, `U`) with Modulo-32
 * Zero runtime regex or validation overhead for pre-validated `FormattedSID`.
 * **Returns**: Canonical 16-character `SID`.
 * **Throws**: `TypeError` in untyped JavaScript if `id` is not a string (e.g. `null` or `undefined`).
+
+---
+
+## License
+
+[Apache-2.0](LICENSE)

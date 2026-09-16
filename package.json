@@ -14,7 +14,7 @@
         "verifier"
     ],
     "author": "Martin Winkler",
-    "license": "UNLICENSED",
+    "license": "Apache-2.0",
     "repository": {
         "type": "git",
         "url": "git+https://github.com/smart-science/smart-id.git"
@@ -28,7 +28,8 @@
     "types": "dist/index.d.ts",
     "files": [
         "dist",
-        "src"
+        "src",
+        "CHANGELOG.md"
     ],
     "exports": {
         ".": {

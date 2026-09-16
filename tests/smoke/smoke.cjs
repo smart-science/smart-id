@@ -1,3 +1,8 @@
+/*
+ * Copyright 2026 Martin Winkler
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
 const assert = require('node:assert/strict');
 
 if (process.env.CI) {
