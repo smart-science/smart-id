@@ -1,6 +1,6 @@
 /*
- * Copyright 2026 Martin Winkler <martin.winkler.dev@gmail.com>
- * SPDX-License-Identifier: UNLICENSED
+ * Copyright 2026 Martin Winkler
+ * SPDX-License-Identifier: Apache-2.0
  */
 
 // -------------------------------------------------------------------
@@ -23,7 +23,7 @@ describe('generate() & generateFormatted()', () => {
             for (let i = 0; i < 1_000; i++) {
                 const id = generate();
                 expect(id).not.toMatch(/[ILOUilou]/);
-                for (let j = 0; j < 15; j++) {
+                for (let j = 0; j < 16; j++) {
                     const char = id[j] ?? '';
                     const idx = ALPHABET.indexOf(char);
                     expect(idx).not.toBe(-1);
@@ -31,7 +31,7 @@ describe('generate() & generateFormatted()', () => {
                     bucketCounts[idx] = currentCount + 1;
                 }
             }
-            // every single Crockford Base32 symbol must appear at least once across 15,000 generated characters.
+            // every single Crockford Base32 symbol must appear at least once across 16,000 generated characters (incl. check characters).
             expect(bucketCounts.every((count) => count > 0)).toBe(true);
         });
 
@@ -72,7 +72,7 @@ describe('generate() & generateFormatted()', () => {
         });
 
         it('proves bitmasking (& 31) when random bytes are all 0xFF', () => {
-            // 0xFF & 31 = 31 ('Z'). 15 'Z's produce check character 'X'.
+            // 0xFF & 31 = 31 ('Z'). 15 'Z's produce check character 'Z'.
             const spy = spyOn(globalThis.crypto, 'getRandomValues').mockImplementation((arr: ArrayBufferView) => {
                 (arr as Uint8Array).fill(0xff);
                 return arr;
@@ -80,7 +80,7 @@ describe('generate() & generateFormatted()', () => {
 
             try {
                 const id = generate();
-                expect(id).toBe('ZZZZZZZZZZZZZZZX' as SID);
+                expect(id).toBe('ZZZZZZZZZZZZZZZZ' as SID);
                 expect(verify(id)).toBe(true);
             } finally {
                 spy.mockRestore();
@@ -117,7 +117,7 @@ describe('generate() & generateFormatted()', () => {
 
             try {
                 const id = generate();
-                expect(id).toBe('0123456789ABCDEN' as SID);
+                expect(id).toBe('0123456789ABCDE7' as SID);
                 expect(verify(id)).toBe(true);
             } finally {
                 spy.mockRestore();

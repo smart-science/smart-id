@@ -1,25 +1,30 @@
 /*!
- * Copyright 2026 Martin Winkler <martin.winkler.dev@gmail.com>
- * SPDX-License-Identifier: UNLICENSED
+ * Copyright 2026 Martin Winkler
+ * SPDX-License-Identifier: Apache-2.0
  */
 
 // -------------------------------------------------------------------
 // 1. Type Declarations
 // -------------------------------------------------------------------
 
-export const SidBrand: unique symbol = Symbol('SidBrand');
-export const FormattedSidBrand: unique symbol = Symbol('FormattedSidBrand');
-
 /** Nominal branded type representing a validated, canonical 16-character identifier. */
-export type SID = string & { readonly [SidBrand]: typeof SidBrand };
+export type SID = string & { readonly __sidBrand: 'SID' };
 
 /** Formatted identifier string matching `XXXX-XXXX-XXXX-XXXX`. */
 export type FormattedSID = `${string}-${string}-${string}-${string}` & {
-    readonly [FormattedSidBrand]: typeof FormattedSidBrand;
+    readonly __sidBrand: 'FormattedSID';
 };
 
-/** Discriminated union result representing either `{ readonly ok: true, readonly data: T }` or `{ readonly ok: false, readonly error: string }`. */
-export type Result<T> =
+/** Machine-readable error codes identifying why identifier validation or parsing failed. */
+export type SidErrorCode =
+    | 'NOT_A_STRING'
+    | 'INVALID_LENGTH'
+    | 'INVALID_FORMAT'
+    | 'INVALID_CHARACTER'
+    | 'CHECKSUM_MISMATCH';
+
+/** Discriminated union result representing either `{ readonly ok: true, readonly data: T }` or `{ readonly ok: false, readonly code: SidErrorCode, readonly error: string }`. */
+export type SidResult<T> =
     | {
           /** Successful operation indicator. */
           readonly ok: true;
@@ -29,6 +34,8 @@ export type Result<T> =
     | {
           /** Failed operation indicator. */
           readonly ok: false;
+          /** Machine-readable error code. */
+          readonly code: SidErrorCode;
           /** Error message describing failure reason. */
           readonly error: string;
       };
@@ -61,9 +68,9 @@ for (const c of 'Oo') {
     DECODE[c.charCodeAt(0)] = 0;
 }
 
-/** Calculates Modulo-32 check character index for a weighted payload sum. */
+/** Check value for a weighted payload sum: solves `sum + 3 * check ≡ 0 (mod 32)`. */
 function checkValue(sum: number): number {
-    return (32 - (sum % 32)) % 32;
+    return ((32 - (sum % 32)) * 11) % 32;
 }
 
 // -------------------------------------------------------------------
@@ -77,7 +84,7 @@ function checkValue(sum: number): number {
  * - appends the calculated Modulo-32 check character.
  *
  * @returns Canonical 16-character unhyphenated `SID`.
- * @throws {TypeError} If runtime environment lacks Crypto (`globalThis.crypto.getRandomValues`).
+ * @throws {TypeError} If the runtime has no global Web Crypto (`globalThis.crypto.getRandomValues`), e.g. Node.js 18 and older.
  */
 export function generate(): SID {
     const bytes = new Uint8Array(PAYLOAD_LENGTH);
@@ -102,7 +109,7 @@ export function generate(): SID {
  * - groups it into a 19-character hyphenated `FormattedSID` string
  *
  * @returns Formatted 19-character hyphenated `FormattedSID` string.
- * @throws {TypeError} If runtime environment lacks Crypto (`globalThis.crypto.getRandomValues`).
+ * @throws {TypeError} If the runtime has no global Web Crypto (`globalThis.crypto.getRandomValues`), e.g. Node.js 18 and older.
  */
 export function generateFormatted(): FormattedSID {
     return toQuadString(generate());
@@ -115,7 +122,7 @@ export function generateFormatted(): FormattedSID {
  * - validates Crockford Base32 character set
  * - validates Modulo-32 checksum
  *
- * Safe against non-string and malformed inputs.
+ * Never throws; safe against non-string and malformed inputs.
  *
  * @param input - Raw or formatted SID.
  * @returns `true` if valid, else `false`.
@@ -129,7 +136,7 @@ export function verify(input: unknown): boolean {
  *
  * Unlike `verify()`, which accepts formatted (`XXXX-XXXX-XXXX-XXXX`), lowercase,
  * whitespace-padded, or repaired variants, `isSID()` returns `true` *only* if the input
- * is already an exact canonical unhyphenated uppercase 16-character `SID`.
+ * is already an exact canonical unhyphenated uppercase 16-character `SID`. Never throws.
  *
  * @param input - Value to validate.
  * @returns `true` if input is an exact canonical `SID`, narrowing the type.
@@ -144,7 +151,7 @@ export function isSID(input: unknown): input is SID {
  *
  * Unlike `verify()`, which accepts unhyphenated, lowercase, whitespace-padded, or repaired
  * variants, `isFormattedSID()` returns `true` *only* if the input is already an exact
- * canonical 19-character hyphenated uppercase `FormattedSID`.
+ * canonical 19-character hyphenated uppercase `FormattedSID`. Never throws.
  *
  * @param input - Value to validate.
  * @returns `true` if input is an exact canonical `FormattedSID`, narrowing the type.
@@ -166,12 +173,12 @@ export function isFormattedSID(input: unknown): input is FormattedSID {
  * - verifies Crockford Base32 alphabet
  * - verifies Modulo-32 checksum
  *
- * Safe against non-string and malformed inputs.
+ * Never throws; safe against non-string and malformed inputs.
  *
  * @param input - Raw or formatted SID.
- * @returns `Result<SID>` containing canonical 16-character `SID` on success, else error string.
+ * @returns `SidResult<SID>` containing canonical 16-character `SID` on success, else error result.
  */
-export function parse(input: unknown): Result<SID> {
+export function parse(input: unknown): SidResult<SID> {
     const normalized = normalize(input);
     if (!normalized.ok) {
         return normalized;
@@ -186,6 +193,7 @@ export function parse(input: unknown): Result<SID> {
         if (val === -1) {
             return {
                 ok: false,
+                code: 'INVALID_CHARACTER',
                 error: `Invalid ID: '${clean}' contains invalid character`,
             };
         }
@@ -194,6 +202,7 @@ export function parse(input: unknown): Result<SID> {
         } else if (val !== checkValue(sum)) {
             return {
                 ok: false,
+                code: 'CHECKSUM_MISMATCH',
                 error: `Invalid ID: '${clean}' failed checksum validation`,
             };
         }
@@ -207,12 +216,14 @@ export function parse(input: unknown): Result<SID> {
  * **Formats an identifier into quad groups `XXXX-XXXX-XXXX-XXXX`.**
  *
  * - parses and validates raw or formatted identifier input
- * - formatting into 19-character quad group (`XXXX-XXXX-XXXX-XXXX`)
+ * - formats it into the 19-character quad group (`XXXX-XXXX-XXXX-XXXX`)
+ *
+ * Never throws; safe against non-string and malformed inputs.
  *
  * @param input - Raw or formatted SID.
- * @returns `Result<FormattedSID>` containing formatted identifier on success, else error string.
+ * @returns `SidResult<FormattedSID>` containing formatted identifier on success, else error result.
  */
-export function format(input: unknown): Result<FormattedSID> {
+export function format(input: unknown): SidResult<FormattedSID> {
     const parsed = parse(input);
     if (!parsed.ok) {
         return parsed;
@@ -222,22 +233,6 @@ export function format(input: unknown): Result<FormattedSID> {
         ok: true,
         data: toQuadString(parsed.data),
     };
-}
-
-/**
- * **Converts a formatted identifier back to its canonical 16-character representation.**
- *
- * Assumes input was already parsed and validated; for unvalidated input, use `parse()`.
- *
- * - strips hyphens at fixed indices (`4, 9, 14`) - direct string slicing.
- *
- * @deprecated Use `parse()` instead. `unformat()` does not validate input and throws or corrupts invalid data.
- * @param id - Validated formatted SID.
- * @returns Canonical 16-character unhyphenated `SID`.
- * @throws {TypeError} In untyped JavaScript if `id` is not a string (e.g. `null` or `undefined`).
- */
-export function unformat(id: FormattedSID): SID {
-    return (id.slice(0, 4) + id.slice(5, 9) + id.slice(10, 14) + id.slice(15)) as SID;
 }
 
 // -------------------------------------------------------------------
@@ -266,9 +261,13 @@ function toQuadString(id: SID): FormattedSID {
  * @param input - Raw input to normalize.
  * @returns Cleaned 16-character string on success, or an error result.
  */
-function normalize(input: unknown): Result<string> {
+function normalize(input: unknown): SidResult<string> {
     if (typeof input !== 'string') {
-        return { ok: false, error: `Expected string input, received ${typeof input}` };
+        return {
+            ok: false,
+            code: 'NOT_A_STRING',
+            error: `Expected string input, received ${input === null ? 'null' : typeof input}`,
+        };
     }
 
     const trimmed = input.trim();
@@ -291,12 +290,14 @@ function normalize(input: unknown): Result<string> {
         }
         return {
             ok: false,
-            error: 'Invalid ID format: expected XXXX-XXXX-XXXX-XXXX with hyphens at positions 4, 9, 14',
+            code: 'INVALID_FORMAT',
+            error: 'Invalid ID format: expected XXXX-XXXX-XXXX-XXXX with hyphens at positions 4, 9, 14 (0-based)',
         };
     }
 
     return {
         ok: false,
-        error: `Invalid ID length: expected ${TOTAL_LENGTH} characters, got ${trimmed.length}`,
+        code: 'INVALID_LENGTH',
+        error: `Invalid ID length: expected 16 (raw) or 19 (XXXX-XXXX-XXXX-XXXX) characters, got ${trimmed.length}`,
     };
 }
