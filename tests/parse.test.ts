@@ -44,7 +44,7 @@ describe('parse() - Unicode Safety & Case Mapping', () => {
         expect(parse('0123456789ABCDÄ7')).toEqual({
             ok: false,
             code: 'INVALID_CHARACTER',
-            error: "Invalid ID: '0123456789ABCDÄ7' contains invalid character",
+            error: 'Invalid ID "0123456789ABCDÄ7" contains invalid character "Ä" at index 14',
         });
     });
 
@@ -57,7 +57,7 @@ describe('parse() - Unicode Safety & Case Mapping', () => {
         const result = parse(emoji16);
         expect(result.ok).toBe(false);
         if (!result.ok) {
-            expect(result.error).toBe(`Invalid ID: '${emoji16}' contains invalid character`);
+            expect(result.error).toBe(`Invalid ID "${emoji16}" contains invalid character "😊" at index 13`);
         }
     });
 
@@ -134,7 +134,7 @@ describe('parse() - Structural & Boundary Edge Cases', () => {
         expect(res).toEqual({
             ok: false,
             code: 'INVALID_CHARACTER',
-            error: `Invalid ID: '${hyphenated16}' contains invalid character`,
+            error: 'Invalid ID "0123-456789ABCDE" contains invalid character "-" at index 4',
         });
     });
 
@@ -189,23 +189,52 @@ describe('parse() - Structural & Boundary Edge Cases', () => {
         });
     });
 
-    it('returns character and checksum errors for 19-char formatted inputs with valid hyphens', () => {
-        // Valid hyphen placement but invalid Crockford Base32 character 'U'
-        const invalidCharFormatted = '0123-4567-89AB-CDEU';
-        expect(verify(invalidCharFormatted)).toBe(false);
-        expect(parse(invalidCharFormatted)).toEqual({
+    it('reports the invalid character and its index in the trimmed input for every position', () => {
+        for (let p = 0; p < 16; p++) {
+            const raw = `${VALID_ID.slice(0, p)}U${VALID_ID.slice(p + 1)}`;
+            const formatted = quad(raw);
+            const formattedIndex = p + Math.floor(p / 4);
+            expect(formatted[formattedIndex]).toBe('U'); // guards the expectation itself
+
+            for (const [input, trimmed, index] of [
+                [raw, raw, p],
+                [formatted, formatted, formattedIndex],
+                [` \t${formatted}\n`, formatted, formattedIndex], // index refers to the trimmed input
+            ] as const) {
+                expect(parse(input)).toEqual({
+                    ok: false,
+                    code: 'INVALID_CHARACTER',
+                    error: `Invalid ID ${JSON.stringify(trimmed)} contains invalid character "U" at index ${index}`,
+                });
+            }
+        }
+    });
+
+    it('escapes quotes and control characters in the reported character', () => {
+        expect(parse("0123456789ABC'D7")).toMatchObject({
+            error: expect.stringContaining(`character "'" at index 13`),
+        });
+        expect(parse('0123456789ABC\nD7')).toMatchObject({
+            error: expect.stringContaining('character "\\n" at index 13'),
+        });
+    });
+
+    it('reports the first invalid character when multiple are present', () => {
+        expect(parse('U123456789ABCDEU')).toEqual({
             ok: false,
             code: 'INVALID_CHARACTER',
-            error: "Invalid ID: '0123456789ABCDEU' contains invalid character",
+            error: 'Invalid ID "U123456789ABCDEU" contains invalid character "U" at index 0',
         });
+    });
 
+    it('returns a checksum error for 19-character formatted input with valid hyphens', () => {
         // Valid hyphen placement and valid alphabet, but invalid checksum
         const invalidChecksumFormatted = '0123-4567-89AB-CDEF';
         expect(verify(invalidChecksumFormatted)).toBe(false);
         expect(parse(invalidChecksumFormatted)).toEqual({
             ok: false,
             code: 'CHECKSUM_MISMATCH',
-            error: "Invalid ID: '0123456789ABCDEF' failed checksum validation",
+            error: 'Invalid ID "0123-4567-89AB-CDEF" failed checksum validation',
         });
     });
 

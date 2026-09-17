@@ -53,6 +53,9 @@ const PAYLOAD_LENGTH = 15;
 /** Required length of the complete raw identifier incl. checksum. */
 const TOTAL_LENGTH = 16;
 
+/** Required length of the formatted identifier `XXXX-XXXX-XXXX-XXXX`. */
+const FORMATTED_LENGTH = 19;
+
 /** ASCII decode table: canonical + lowercase chars, `I/i/L/l` -> 1, `O/o` -> 0, else -1. */
 const DECODE = new Int8Array(128).fill(-1);
 const LOWER_ALPHABET = ALPHABET.toLowerCase();
@@ -171,7 +174,7 @@ export function isFormattedSID(input: unknown): input is FormattedSID {
  *    - `I`/`L` -> `1`
  *    - `O` -> `0`
  * - strips hyphens from valid 19-character quad format
- * - verifies Crockford Base32 alphabet
+ * - verifies Crockford Base32 alphabet (reporting invalid character and index in trimmed input)
  * - verifies Modulo-32 checksum
  *
  * Never throws; safe against non-string and malformed inputs.
@@ -185,17 +188,20 @@ export function parse(input: unknown): SidResult<SID> {
         return normalized;
     }
 
-    const clean = normalized.data;
+    const { trimmed, clean } = normalized.data;
     let canonical = '';
     let sum = 0;
     for (let i = 0; i < TOTAL_LENGTH; i++) {
         const code = clean.charCodeAt(i);
         const val = DECODE[code] ?? -1;
         if (val === -1) {
+            // UTF-16 index into the trimmed input; formatted input shifts by one per preceding hyphen
+            const index = trimmed.length === FORMATTED_LENGTH ? i + Math.floor(i / 4) : i;
+            const char = String.fromCodePoint(trimmed.codePointAt(index) ?? 0);
             return {
                 ok: false,
                 code: 'INVALID_CHARACTER',
-                error: `Invalid ID: '${clean}' contains invalid character`,
+                error: `Invalid ID ${JSON.stringify(trimmed)} contains invalid character ${JSON.stringify(char)} at index ${index}`,
             };
         }
         if (i < PAYLOAD_LENGTH) {
@@ -204,7 +210,7 @@ export function parse(input: unknown): SidResult<SID> {
             return {
                 ok: false,
                 code: 'CHECKSUM_MISMATCH',
-                error: `Invalid ID: '${clean}' failed checksum validation`,
+                error: `Invalid ID ${JSON.stringify(trimmed)} failed checksum validation`,
             };
         }
         canonical += ALPHABET[val] ?? '';
@@ -260,9 +266,9 @@ function toQuadString(id: SID): FormattedSID {
  * `parse()` does all of that in a single pass over the ASCII decode table.
  *
  * @param input - Raw input to normalize.
- * @returns Cleaned 16-character string on success, or an error result.
+ * @returns Cleaned 16-character string alongside trimmed input on success, or an error result.
  */
-function normalize(input: unknown): SidResult<string> {
+function normalize(input: unknown): SidResult<{ trimmed: string; clean: string }> {
     if (typeof input !== 'string') {
         return {
             ok: false,
@@ -274,10 +280,10 @@ function normalize(input: unknown): SidResult<string> {
     const trimmed = input.trim();
 
     if (trimmed.length === TOTAL_LENGTH) {
-        return { ok: true, data: trimmed };
+        return { ok: true, data: { trimmed, clean: trimmed } };
     }
 
-    if (trimmed.length === 19) {
+    if (trimmed.length === FORMATTED_LENGTH) {
         if (
             trimmed.indexOf('-', 0) === 4 &&
             trimmed.indexOf('-', 5) === 9 &&
@@ -286,7 +292,10 @@ function normalize(input: unknown): SidResult<string> {
         ) {
             return {
                 ok: true,
-                data: trimmed.slice(0, 4) + trimmed.slice(5, 9) + trimmed.slice(10, 14) + trimmed.slice(15),
+                data: {
+                    trimmed,
+                    clean: trimmed.slice(0, 4) + trimmed.slice(5, 9) + trimmed.slice(10, 14) + trimmed.slice(15),
+                },
             };
         }
         return {

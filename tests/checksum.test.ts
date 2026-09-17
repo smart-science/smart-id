@@ -68,7 +68,7 @@ describe('Checksum Properties & Mathematical Limits', () => {
                 expect(res.ok).toBe(false);
                 if (!res.ok) {
                     expect(res.code).toBe('CHECKSUM_MISMATCH');
-                    expect(res.error).toBe(`Invalid ID: '${invalidID}' failed checksum validation`);
+                    expect(res.error).toBe(`Invalid ID ${JSON.stringify(invalidID)} failed checksum validation`);
                 }
 
                 const formatRes = format(invalidID);
