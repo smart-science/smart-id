@@ -149,8 +149,8 @@ Branch on `code`; `error` is a human-readable diagnostic message.
 
 | Runtime | Versions | Notes |
 |---|---|---|
-| **Node.js** | 20.19 and later | ESM `import` and CommonJS `require()` |
-| **Bun** | 1.0 and later | Uses the TypeScript source via the `bun` export condition |
+| **Node.js** | 20.19+ on 20.x, or 22.12 and later | ESM `import` and CommonJS `require()` |
+| **Bun** | 1.3 and later | Uses the TypeScript source via the `bun` export condition |
 | **Deno** | Current | Via the `npm:` specifier |
 | **Browsers** | Current evergreen browsers | Requires Web Crypto |
 
