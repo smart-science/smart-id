@@ -103,6 +103,44 @@ Branch on `code`; `error` is a human-readable diagnostic message.
 
 ---
 
+## TypeScript Types & Nominal Branding
+
+The package exports compile-time types for working safely with validated identifiers:
+
+```ts
+import type { FormattedSID, SID, SidErrorCode, SidResult } from '@smart-science/sid';
+```
+
+### Nominal Branding
+`SID` and `FormattedSID` are *branded* strings. At runtime they are plain strings; the brand exists only for the TypeScript compiler:
+* A plain `string` is not assignable to `SID` or `FormattedSID`. Only `generate()`, `generateFormatted()`, `parse()`, `format()`, `isSID()`, and `isFormattedSID()` produce them, so functions that take a `SID` cannot receive unvalidated input by accident.
+* Both remain assignable to `string`.
+* This is a compile-time check, not a runtime guarantee: validate untrusted input with `parse()`.
+
+```ts
+import { isSID, parse, type SID } from '@smart-science/sid';
+
+function saveRecord(id: SID) {
+    // ...
+}
+
+const input: string = request.params.id;
+saveRecord(input); // compile error: 'string' is not assignable to 'SID'
+
+const result = parse(input);
+if (result.ok) {
+    saveRecord(result.data); // OK: validated and canonical
+}
+
+if (isSID(input)) {
+    saveRecord(input); // OK: narrowed to SID
+}
+```
+
+IDs loaded from trusted storage can be re-validated with `parse()` or asserted with `row.id as SID`. Do not read the `__sidBrand` property; it does not exist at runtime.
+
+---
+
 ## Algorithm Specification
 
 1. **Length:** 16 characters: 15 random payload characters followed by 1 check character.
