@@ -68,7 +68,10 @@ describe('parse() - Unicode Safety & Case Mapping', () => {
         expect(verify('OL23-4567-89AB-CDE7')).toBe(true);
     });
 
-    it('repairs lowercase i, l, o inside formatted strings', () => {
+    it('repairs lowercase i, l, o in raw and formatted input', () => {
+        expect(parse('oi23456789abcde7')).toEqual({ ok: true, data: VALID_ID });
+        expect(parse('ol23456789abcde7')).toEqual({ ok: true, data: VALID_ID });
+
         // 'oi23-4567-89ab-cde7' has lowercase 'o' -> '0', 'i' -> '1', 'a'->'A', 'b'->'B', 'c'->'C', 'd'->'D', 'e'->'E'
         const messyFormatted = 'oi23-4567-89ab-cde7';
         const parsed = parse(messyFormatted);
@@ -103,7 +106,7 @@ describe('parse() - Structural & Boundary Edge Cases', () => {
         });
     });
 
-    it('rejects boundary lengths around 19 and whitespace-only strings', () => {
+    it('rejects boundary lengths around 16 and 19 and whitespace-only strings', () => {
         // Lengths 15 and 17 (neighbours of the raw length 16)
         expect(parse('0123456789ABCDE')).toEqual({
             ok: false,
@@ -186,6 +189,14 @@ describe('parse() - Structural & Boundary Edge Cases', () => {
             ok: false,
             code: 'INVALID_CHARACTER',
             error: 'Invalid ID "U123456789ABCDEU" contains invalid character "U" at index 0',
+        });
+    });
+
+    it('rejects lowercase u, which is not repaired', () => {
+        expect(parse('0123456789abcdu7')).toEqual({
+            ok: false,
+            code: 'INVALID_CHARACTER',
+            error: 'Invalid ID "0123456789abcdu7" contains invalid character "u" at index 14',
         });
     });
 
