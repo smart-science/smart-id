@@ -55,10 +55,11 @@ const TOTAL_LENGTH = 16;
 
 /** ASCII decode table: canonical + lowercase chars, `I/i/L/l` -> 1, `O/o` -> 0, else -1. */
 const DECODE = new Int8Array(128).fill(-1);
+const LOWER_ALPHABET = ALPHABET.toLowerCase();
 for (let i = 0; i < ALPHABET.length; i++) {
     const charCode = ALPHABET.charCodeAt(i);
     DECODE[charCode] = i;
-    const lowerCharCode = ALPHABET.toLowerCase().charCodeAt(i);
+    const lowerCharCode = LOWER_ALPHABET.charCodeAt(i);
     DECODE[lowerCharCode] = i;
 }
 for (const c of 'IiLl') {
@@ -189,7 +190,7 @@ export function parse(input: unknown): SidResult<SID> {
     let sum = 0;
     for (let i = 0; i < TOTAL_LENGTH; i++) {
         const code = clean.charCodeAt(i);
-        const val = code < 128 ? (DECODE[code] ?? -1) : -1;
+        const val = DECODE[code] ?? -1;
         if (val === -1) {
             return {
                 ok: false,
