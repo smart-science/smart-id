@@ -153,7 +153,6 @@ describe('parse() - Structural & Boundary Edge Cases', () => {
 
         // Length 18
         const len18 = '0123456789ABCDEF01';
-        expect(len18.length).toBe(18);
         expect(verify(len18)).toBe(false);
         expect(parse(len18)).toEqual({
             ok: false,
@@ -163,7 +162,6 @@ describe('parse() - Structural & Boundary Edge Cases', () => {
 
         // Length 20
         const len20 = '0123-4567-89AB-CDE70';
-        expect(len20.length).toBe(20);
         expect(verify(len20)).toBe(false);
         expect(parse(len20)).toEqual({
             ok: false,
@@ -181,7 +179,6 @@ describe('parse() - Structural & Boundary Edge Cases', () => {
 
         // Verifies length is measured AFTER trimming
         const raw18 = `  ${VALID_ID}`;
-        expect(raw18.length).toBe(18);
         expect(verify(raw18)).toBe(true);
         expect(parse(raw18)).toEqual({
             ok: true,

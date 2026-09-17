@@ -95,12 +95,6 @@ describe('Checksum Properties & Mathematical Limits', () => {
     });
 
     describe('Transposition Detection (v0.2 Algorithm)', () => {
-        it('detects a swap of the last payload character and the check character', () => {
-            // Position 14 has weight 1 and the check character (position 15) has weight 3.
-            expect(verify('0123456789ABCDE7')).toBe(true);
-            expect(verify('0123456789ABCD7E')).toBe(false);
-        });
-
         it('detects every two-position swap unless the weights match or the values differ by 16', () => {
             // Exhaustive over all position pairs (i < j) and all ordered character pairs (a != b).
             // A swap changes the weighted sum by (weight(i) - weight(j)) * (value(a) - value(b)).

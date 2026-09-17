@@ -9,7 +9,7 @@
 
 import { describe, expect, it } from 'bun:test';
 import { isFormattedSID, isSID } from '../src/index';
-import { quad, VALID_FORMATTED, VALID_ID, VALID_ID_2, VALID_ID_ALL_ZERO } from './helpers';
+import { quad, VALID_ID, VALID_ID_2, VALID_ID_ALL_ZERO } from './helpers';
 
 // -------------------------------------------------------------------
 // 2. Test Suite: Strict Type Guards
@@ -35,7 +35,6 @@ describe('Strict Type Guards: isSID() and isFormattedSID()', () => {
         });
 
         it('returns false for formatted quad-grouped identifiers', () => {
-            expect(isSID(VALID_FORMATTED)).toBe(false);
             expect(isSID(quad(VALID_ID))).toBe(false);
         });
 
@@ -58,7 +57,6 @@ describe('Strict Type Guards: isSID() and isFormattedSID()', () => {
 
     describe('isFormattedSID()', () => {
         it('returns true only for exact canonical XXXX-XXXX-XXXX-XXXX uppercase strings', () => {
-            expect(isFormattedSID(VALID_FORMATTED)).toBe(true);
             expect(isFormattedSID(quad(VALID_ID))).toBe(true);
             expect(isFormattedSID(quad(VALID_ID_2))).toBe(true);
         });
@@ -69,13 +67,13 @@ describe('Strict Type Guards: isSID() and isFormattedSID()', () => {
         });
 
         it('returns false for lowercase formatted identifiers', () => {
-            expect(isFormattedSID(VALID_FORMATTED.toLowerCase())).toBe(false);
+            expect(isFormattedSID(quad(VALID_ID).toLowerCase())).toBe(false);
         });
 
         it('returns false for whitespace-padded formatted identifiers', () => {
-            expect(isFormattedSID(` ${VALID_FORMATTED}`)).toBe(false);
-            expect(isFormattedSID(`${VALID_FORMATTED} `)).toBe(false);
-            expect(isFormattedSID(`\t${VALID_FORMATTED}\n`)).toBe(false);
+            expect(isFormattedSID(` ${quad(VALID_ID)}`)).toBe(false);
+            expect(isFormattedSID(`${quad(VALID_ID)} `)).toBe(false);
+            expect(isFormattedSID(`\t${quad(VALID_ID)}\n`)).toBe(false);
         });
 
         it('returns false for repaired ambiguous characters inside formatted strings', () => {
