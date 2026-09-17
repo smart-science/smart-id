@@ -27,6 +27,7 @@ const HOSTILE_INPUTS: readonly unknown[] = [
     0,
     Number.NaN,
     Number.POSITIVE_INFINITY,
+    Number.NEGATIVE_INFINITY,
     10n,
     true,
     Symbol('sid'),
@@ -62,8 +63,33 @@ describe('Validation functions never throw', () => {
 
     it('parse and format return failure results for hostile inputs', () => {
         for (const input of HOSTILE_INPUTS) {
-            expect(parse(input).ok).toBe(false);
-            expect(format(input).ok).toBe(false);
+            const parseRes = parse(input);
+            expect(parseRes.ok).toBe(false);
+            expect<unknown>(format(input)).toEqual(parseRes);
+            if (typeof input !== 'string' && !parseRes.ok) {
+                expect(parseRes.code).toBe('NOT_A_STRING');
+            }
+        }
+    });
+
+    it('names the received type in NOT_A_STRING messages', () => {
+        const cases: readonly (readonly [unknown, string])[] = [
+            [undefined, 'undefined'],
+            [null, 'null'],
+            [Number.NaN, 'number'],
+            [10n, 'bigint'],
+            [true, 'boolean'],
+            [Symbol('sid'), 'symbol'],
+            [new String('0123456789ABCDE7'), 'object'],
+            [[], 'object'],
+            [() => {}, 'function'],
+        ];
+        for (const [input, name] of cases) {
+            expect(parse(input)).toEqual({
+                ok: false,
+                code: 'NOT_A_STRING',
+                error: `Expected string input, received ${name}`,
+            });
         }
     });
 });

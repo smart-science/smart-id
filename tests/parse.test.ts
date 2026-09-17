@@ -89,41 +89,6 @@ describe('parse() - Unicode Safety & Case Mapping', () => {
     });
 });
 
-describe('parse() - Unusual Non-String Inputs', () => {
-    it('rejects null with explicit received null message', () => {
-        expect(verify(null)).toBe(false);
-        const res = parse(null);
-        expect(res).toEqual({
-            ok: false,
-            code: 'NOT_A_STRING',
-            error: 'Expected string input, received null',
-        });
-    });
-
-    it('reports boxed strings and non-finite numbers as NOT_A_STRING', () => {
-        // boxed String objects have typeof === 'object' and must be rejected
-        const boxed = new String(VALID_ID);
-        expect(verify(boxed)).toBe(false);
-        const parseBoxed = parse(boxed);
-        expect(parseBoxed.ok).toBe(false);
-        if (!parseBoxed.ok) {
-            expect(parseBoxed.code).toBe('NOT_A_STRING');
-            expect(parseBoxed.error).toBe('Expected string input, received object');
-        }
-
-        // NaN, Infinity, -Infinity
-        for (const num of [NaN, Number.POSITIVE_INFINITY, Number.NEGATIVE_INFINITY]) {
-            expect(verify(num)).toBe(false);
-            const res = parse(num);
-            expect(res.ok).toBe(false);
-            if (!res.ok) {
-                expect(res.code).toBe('NOT_A_STRING');
-                expect(res.error).toBe('Expected string input, received number');
-            }
-        }
-    });
-});
-
 describe('parse() - Structural & Boundary Edge Cases', () => {
     it('rejects 16-character input containing misplaced hyphens with invalid character error', () => {
         const hyphenated16 = '0123-456789ABCDE';
