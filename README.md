@@ -91,7 +91,15 @@ export type SidErrorCode =
     | 'CHECKSUM_MISMATCH';
 ```
 
-Branch on `code`; `error` is a human-readable message.
+Branch on `code`; `error` is a human-readable diagnostic message.
+
+| Code | Returned when |
+|---|---|
+| `NOT_A_STRING` | The input is not a primitive string (e.g. `null`, `undefined`, number, object) |
+| `INVALID_LENGTH` | The trimmed length is neither 16 (raw) nor 19 (formatted) |
+| `INVALID_FORMAT` | The input has 19 characters but hyphens are not at indices 4, 9, 14 (`XXXX-XXXX-XXXX-XXXX`) |
+| `INVALID_CHARACTER` | A character is not in Crockford Base32 (upper- or lowercase) and is not a repairable I, L, or O; the message names the character and its index in the trimmed input |
+| `CHECKSUM_MISMATCH` | The check character does not match the modulo-32 checksum |
 
 ---
 
