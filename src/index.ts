@@ -7,15 +7,21 @@
 // 1. Type Declarations
 // -------------------------------------------------------------------
 
-/** Nominal branded type representing a validated, canonical 16-character identifier. */
+/**
+ * Validated, canonical 16-character identifier. A branded string: plain at runtime, distinct from `string`
+ * at compile time. Obtain it from `generate()`, `parse()`, or `isSID()`; `__sidBrand` exists only in the type.
+ */
 export type SID = string & { readonly __sidBrand: 'SID' };
 
-/** Formatted identifier string matching `XXXX-XXXX-XXXX-XXXX`. */
+/**
+ * Validated, canonical 19-character identifier `XXXX-XXXX-XXXX-XXXX`. A branded string like `SID`.
+ * Obtain it from `generateFormatted()`, `format()`, or `isFormattedSID()`.
+ */
 export type FormattedSID = `${string}-${string}-${string}-${string}` & {
     readonly __sidBrand: 'FormattedSID';
 };
 
-/** Machine-readable error codes identifying why identifier validation or parsing failed. */
+/** Machine-readable reason why `parse()` or `format()` failed. */
 export type SidErrorCode =
     | 'NOT_A_STRING'
     | 'INVALID_LENGTH'
@@ -23,7 +29,7 @@ export type SidErrorCode =
     | 'INVALID_CHARACTER'
     | 'CHECKSUM_MISMATCH';
 
-/** Discriminated union result representing either `{ readonly ok: true, readonly data: T }` or `{ readonly ok: false, readonly code: SidErrorCode, readonly error: string }`. */
+/** Result of `parse()` and `format()`: success with `data`, or failure with `code` and `error`. */
 export type SidResult<T> =
     | {
           /** Successful operation indicator. */
@@ -36,7 +42,7 @@ export type SidResult<T> =
           readonly ok: false;
           /** Machine-readable error code. */
           readonly code: SidErrorCode;
-          /** Error message describing failure reason. */
+          /** Human-readable message; branch on `code` instead, as the wording may change. */
           readonly error: string;
       };
 
@@ -169,7 +175,7 @@ export function isFormattedSID(input: unknown): input is FormattedSID {
  * **Parses and validates an identifier into a canonical `SID`.**
  *
  * - trims whitespace
- * - normalizes lowercase characters to uppercase
+ * - accepts lowercase characters (output is uppercase)
  * - repairs ambiguous characters
  *    - `I`/`L` -> `1`
  *    - `O` -> `0`
