@@ -7,15 +7,21 @@
 // 1. Type Declarations
 // -------------------------------------------------------------------
 
-/** Nominal branded type representing a validated, canonical 16-character identifier. */
+/**
+ * Validated, canonical 16-character identifier. A branded string: plain at runtime, distinct from `string`
+ * at compile time. Obtain it from `generate()`, `parse()`, or `isSID()`; `__sidBrand` exists only in the type.
+ */
 export type SID = string & { readonly __sidBrand: 'SID' };
 
-/** Formatted identifier string matching `XXXX-XXXX-XXXX-XXXX`. */
+/**
+ * Validated, canonical 19-character identifier `XXXX-XXXX-XXXX-XXXX`. A branded string like `SID`.
+ * Obtain it from `generateFormatted()`, `format()`, or `isFormattedSID()`.
+ */
 export type FormattedSID = `${string}-${string}-${string}-${string}` & {
     readonly __sidBrand: 'FormattedSID';
 };
 
-/** Machine-readable error codes identifying why identifier validation or parsing failed. */
+/** Machine-readable reason why `parse()` or `format()` failed. */
 export type SidErrorCode =
     | 'NOT_A_STRING'
     | 'INVALID_LENGTH'
@@ -23,7 +29,7 @@ export type SidErrorCode =
     | 'INVALID_CHARACTER'
     | 'CHECKSUM_MISMATCH';
 
-/** Discriminated union result representing either `{ readonly ok: true, readonly data: T }` or `{ readonly ok: false, readonly code: SidErrorCode, readonly error: string }`. */
+/** Result of `parse()` and `format()`: success with `data`, or failure with `code` and `error`. */
 export type SidResult<T> =
     | {
           /** Successful operation indicator. */
@@ -36,7 +42,7 @@ export type SidResult<T> =
           readonly ok: false;
           /** Machine-readable error code. */
           readonly code: SidErrorCode;
-          /** Error message describing failure reason. */
+          /** Human-readable message; branch on `code` instead, as the wording may change. */
           readonly error: string;
       };
 
@@ -53,12 +59,16 @@ const PAYLOAD_LENGTH = 15;
 /** Required length of the complete raw identifier incl. checksum. */
 const TOTAL_LENGTH = 16;
 
+/** Required length of the formatted identifier `XXXX-XXXX-XXXX-XXXX`. */
+const FORMATTED_LENGTH = 19;
+
 /** ASCII decode table: canonical + lowercase chars, `I/i/L/l` -> 1, `O/o` -> 0, else -1. */
 const DECODE = new Int8Array(128).fill(-1);
+const LOWER_ALPHABET = ALPHABET.toLowerCase();
 for (let i = 0; i < ALPHABET.length; i++) {
     const charCode = ALPHABET.charCodeAt(i);
     DECODE[charCode] = i;
-    const lowerCharCode = ALPHABET.toLowerCase().charCodeAt(i);
+    const lowerCharCode = LOWER_ALPHABET.charCodeAt(i);
     DECODE[lowerCharCode] = i;
 }
 for (const c of 'IiLl') {
@@ -87,8 +97,14 @@ function checkValue(sum: number): number {
  * @throws {TypeError} If the runtime has no global Web Crypto (`globalThis.crypto.getRandomValues`), e.g. Node.js 18 and older.
  */
 export function generate(): SID {
+    const webCrypto = globalThis.crypto;
+    if (typeof webCrypto?.getRandomValues !== 'function') {
+        throw new TypeError(
+            'generate() requires Web Crypto (globalThis.crypto.getRandomValues), which this runtime lacks',
+        );
+    }
     const bytes = new Uint8Array(PAYLOAD_LENGTH);
-    globalThis.crypto.getRandomValues(bytes);
+    webCrypto.getRandomValues(bytes);
 
     let payload = '';
     let sum = 0;
@@ -165,12 +181,12 @@ export function isFormattedSID(input: unknown): input is FormattedSID {
  * **Parses and validates an identifier into a canonical `SID`.**
  *
  * - trims whitespace
- * - normalizes lowercase characters to uppercase
+ * - accepts lowercase characters (output is uppercase)
  * - repairs ambiguous characters
  *    - `I`/`L` -> `1`
  *    - `O` -> `0`
  * - strips hyphens from valid 19-character quad format
- * - verifies Crockford Base32 alphabet
+ * - verifies Crockford Base32 alphabet (reporting invalid character and index in trimmed input)
  * - verifies Modulo-32 checksum
  *
  * Never throws; safe against non-string and malformed inputs.
@@ -184,17 +200,20 @@ export function parse(input: unknown): SidResult<SID> {
         return normalized;
     }
 
-    const clean = normalized.data;
+    const { trimmed, clean } = normalized.data;
     let canonical = '';
     let sum = 0;
     for (let i = 0; i < TOTAL_LENGTH; i++) {
         const code = clean.charCodeAt(i);
-        const val = code < 128 ? (DECODE[code] ?? -1) : -1;
+        const val = DECODE[code] ?? -1;
         if (val === -1) {
+            // UTF-16 index into the trimmed input; formatted input shifts by one per preceding hyphen
+            const index = trimmed.length === FORMATTED_LENGTH ? i + Math.floor(i / 4) : i;
+            const char = String.fromCodePoint(trimmed.codePointAt(index) ?? 0);
             return {
                 ok: false,
                 code: 'INVALID_CHARACTER',
-                error: `Invalid ID: '${clean}' contains invalid character`,
+                error: `Invalid ID ${JSON.stringify(trimmed)} contains invalid character ${JSON.stringify(char)} at index ${index}`,
             };
         }
         if (i < PAYLOAD_LENGTH) {
@@ -203,7 +222,7 @@ export function parse(input: unknown): SidResult<SID> {
             return {
                 ok: false,
                 code: 'CHECKSUM_MISMATCH',
-                error: `Invalid ID: '${clean}' failed checksum validation`,
+                error: `Invalid ID ${JSON.stringify(trimmed)} failed checksum validation`,
             };
         }
         canonical += ALPHABET[val] ?? '';
@@ -259,9 +278,9 @@ function toQuadString(id: SID): FormattedSID {
  * `parse()` does all of that in a single pass over the ASCII decode table.
  *
  * @param input - Raw input to normalize.
- * @returns Cleaned 16-character string on success, or an error result.
+ * @returns Cleaned 16-character string alongside trimmed input on success, or an error result.
  */
-function normalize(input: unknown): SidResult<string> {
+function normalize(input: unknown): SidResult<{ trimmed: string; clean: string }> {
     if (typeof input !== 'string') {
         return {
             ok: false,
@@ -273,10 +292,10 @@ function normalize(input: unknown): SidResult<string> {
     const trimmed = input.trim();
 
     if (trimmed.length === TOTAL_LENGTH) {
-        return { ok: true, data: trimmed };
+        return { ok: true, data: { trimmed, clean: trimmed } };
     }
 
-    if (trimmed.length === 19) {
+    if (trimmed.length === FORMATTED_LENGTH) {
         if (
             trimmed.indexOf('-', 0) === 4 &&
             trimmed.indexOf('-', 5) === 9 &&
@@ -285,7 +304,10 @@ function normalize(input: unknown): SidResult<string> {
         ) {
             return {
                 ok: true,
-                data: trimmed.slice(0, 4) + trimmed.slice(5, 9) + trimmed.slice(10, 14) + trimmed.slice(15),
+                data: {
+                    trimmed,
+                    clean: trimmed.slice(0, 4) + trimmed.slice(5, 9) + trimmed.slice(10, 14) + trimmed.slice(15),
+                },
             };
         }
         return {

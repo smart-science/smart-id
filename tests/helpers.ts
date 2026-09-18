@@ -12,7 +12,6 @@ export const ALPHABET = '0123456789ABCDEFGHJKMNPQRSTVWXYZ';
 export const VALID_ID = '0123456789ABCDE7' as SID;
 export const VALID_ID_2 = 'VWXYZ01234567892' as SID;
 export const VALID_ID_ALL_ZERO = '0000000000000000' as SID;
-export const VALID_FORMATTED = '0123-4567-89AB-CDE7' as FormattedSID;
 
 /**
  * Formats a 16-character string into quad groups `XXXX-XXXX-XXXX-XXXX`.

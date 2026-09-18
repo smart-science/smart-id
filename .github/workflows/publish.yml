@@ -5,6 +5,7 @@ on:
     tags:
       - 'v*'
 
+# id-token: write lets npm trusted publishing authenticate this workflow via OIDC (no npm token)
 permissions:
   contents: read
   id-token: write
@@ -24,8 +25,12 @@ jobs:
       - name: Setup Node
         uses: actions/setup-node@v4
         with:
-          node-version: 22
+          node-version: 24
           registry-url: 'https://registry.npmjs.org'
+
+      # trusted publishing requires npm 11.5.1 or later
+      - name: Update npm
+        run: npm install -g npm@^11.5.1
 
       - name: Verify tag matches package.json version
         run: |
@@ -38,8 +43,7 @@ jobs:
       - name: Install dependencies
         run: bun install --frozen-lockfile
 
-      # prepublishOnly runs `bun run check` (lint, tests, build, Node smoke tests)
-      - name: Publish to npm with provenance
-        run: npm publish --provenance
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+      # prepublishOnly runs `bun run check` (lint, tests, build, Node smoke tests, package check);
+      # trusted publishing attaches provenance automatically
+      - name: Publish to npm
+        run: npm publish

@@ -23,6 +23,15 @@ assert.equal(isSID('0123456789abcde7'), false);
 assert.equal(isFormattedSID(generateFormatted()), true);
 assert.deepEqual(parse(null), { ok: false, code: 'NOT_A_STRING', error: 'Expected string input, received null' });
 assert.equal(parse('0123456789ABCDEN').code, 'CHECKSUM_MISMATCH');
-assert.equal('unformat' in (await import('@smart-science/sid')), false);
+const api = await import('@smart-science/sid');
+assert.deepEqual(Object.keys(api).sort(), [
+    'format',
+    'generate',
+    'generateFormatted',
+    'isFormattedSID',
+    'isSID',
+    'parse',
+    'verify',
+]);
 
 console.log('ESM smoke test passed.');

@@ -17,12 +17,10 @@ import { ALPHABET } from './helpers';
 
 describe('generate() & generateFormatted()', () => {
     describe('Basic Output Structure & Format', () => {
-        it('guarantees complete alphabet utilization and zero forbidden characters', () => {
-            // assert zero forbidden characters `/[ILOUilou]/` and bucket spread across 1,000 samples.
+        it('uses every alphabet character and nothing outside the alphabet', () => {
             const bucketCounts = new Uint32Array(32);
             for (let i = 0; i < 1_000; i++) {
                 const id = generate();
-                expect(id).not.toMatch(/[ILOUilou]/);
                 for (let j = 0; j < 16; j++) {
                     const char = id[j] ?? '';
                     const idx = ALPHABET.indexOf(char);
@@ -35,17 +33,14 @@ describe('generate() & generateFormatted()', () => {
             expect(bucketCounts.every((count) => count > 0)).toBe(true);
         });
 
-        it('generates a valid quad-grouped FormattedSID matching expected pattern', () => {
+        it('generates a valid quad-grouped FormattedSID that roundtrips cleanly with parse()', () => {
             const formatted = generateFormatted();
             expect(formatted).toHaveLength(19);
             expect(formatted).toMatch(
                 /^[0-9A-HJKMNP-TV-Z]{4}-[0-9A-HJKMNP-TV-Z]{4}-[0-9A-HJKMNP-TV-Z]{4}-[0-9A-HJKMNP-TV-Z]{4}$/,
             );
             expect(verify(formatted)).toBe(true);
-        });
 
-        it('roundtrips cleanly with parse()', () => {
-            const formatted = generateFormatted();
             const parsed = parse(formatted);
             expect(parsed.ok).toBe(true);
             if (parsed.ok) {
@@ -126,24 +121,22 @@ describe('generate() & generateFormatted()', () => {
     });
 
     describe('Missing Web Crypto Runtime Behavior', () => {
-        it('throws TypeError when globalThis.crypto is undefined', () => {
-            const originalCrypto = globalThis.crypto;
+        it('throws a descriptive TypeError when Web Crypto or getRandomValues is missing', () => {
+            const MESSAGE =
+                'generate() requires Web Crypto (globalThis.crypto.getRandomValues), which this runtime lacks';
+            const originalDescriptor = Object.getOwnPropertyDescriptor(globalThis, 'crypto');
             try {
-                // Temporarily mask crypto
-                Object.defineProperty(globalThis, 'crypto', {
-                    value: undefined,
-                    configurable: true,
-                    writable: true,
-                });
+                for (const value of [undefined, null, {}, { getRandomValues: 'not a function' }]) {
+                    // Temporarily mask crypto
+                    Object.defineProperty(globalThis, 'crypto', { value, configurable: true, writable: true });
 
-                expect(() => generate()).toThrow(TypeError);
-                expect(() => generateFormatted()).toThrow(TypeError);
+                    expect(() => generate()).toThrow(new TypeError(MESSAGE));
+                    expect(() => generateFormatted()).toThrow(new TypeError(MESSAGE));
+                }
             } finally {
-                Object.defineProperty(globalThis, 'crypto', {
-                    value: originalCrypto,
-                    configurable: true,
-                    writable: true,
-                });
+                if (originalDescriptor) {
+                    Object.defineProperty(globalThis, 'crypto', originalDescriptor);
+                }
             }
         });
     });

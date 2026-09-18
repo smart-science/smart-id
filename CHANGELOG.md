@@ -10,15 +10,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 - Machine-readable `code` (`SidErrorCode`) on every failure result: `NOT_A_STRING`, `INVALID_LENGTH`, `INVALID_FORMAT`, `INVALID_CHARACTER`, or `CHECKSUM_MISMATCH`.
-- Releases are published to npm with provenance.
-- README documents the algorithm, error detection, strict type guards, error codes, and runtime support.
+- Releases are published to npm through trusted publishing (OIDC, no npm token) with provenance.
+- README documents each function with examples, the error codes, TypeScript types, how IDs work (alphabet, input repair, check character), and runtime support.
 
 ### Changed
 
 - License changed from `UNLICENSED` to `Apache-2.0`.
 - **BREAKING**: `SID` and `FormattedSID` are branded with string-literal types; the runtime exports `SidBrand` and `FormattedSidBrand` are removed.
 - **BREAKING**: `Result<T>` is renamed to `SidResult<T>`.
-- Error messages reworded: `null` input is reported as `null`, both valid lengths are named, and hyphen positions are marked as 0-based. Branch on `code` instead of matching `error`.
+- Error messages reworded: `null` input is reported as `null`, both valid lengths are named, hyphen positions are marked as 0-based, input is quoted as trimmed (with hyphens), and `INVALID_CHARACTER` names the offending character and its index. Branch on `code` instead of matching `error`.
+- `generate()` and `generateFormatted()` throw a `TypeError` that names the missing Web Crypto API instead of the runtime's generic property-access error.
+- `engines.node` narrowed to `^20.19.0 || >=22.12.0`, where `require()` of the package works; `engines.bun` raised to `>=1.3.0`.
 - **BREAKING**: The check character continues the alternating 1/3 weights (weight 3), so swapping the last two characters is now detected. IDs created with 0.1.x may no longer verify.
 
 ### Removed

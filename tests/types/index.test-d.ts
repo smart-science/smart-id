@@ -74,6 +74,12 @@ export type Test_SID_Does_Not_Extend_FormattedSID = ExpectFalse<Extends<SID, For
 // 3.7 FormattedSID cannot be assigned to canonical SID without parsing.
 export type Test_FormattedSID_Does_Not_Extend_SID = ExpectFalse<Extends<FormattedSID, SID>>;
 
+// 3.8 Brand shapes are pinned: changing them breaks assignability between two installed copies of the package.
+export type Test_SID_Brand_Shape = Expect<Equal<SID, string & { readonly __sidBrand: 'SID' }>>;
+export type Test_FormattedSID_Brand_Shape = Expect<
+    Equal<FormattedSID, `${string}-${string}-${string}-${string}` & { readonly __sidBrand: 'FormattedSID' }>
+>;
+
 // -------------------------------------------------------------------
 // 4. SidResult Discriminated Union Shape
 // -------------------------------------------------------------------
