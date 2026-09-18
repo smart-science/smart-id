@@ -121,24 +121,22 @@ describe('generate() & generateFormatted()', () => {
     });
 
     describe('Missing Web Crypto Runtime Behavior', () => {
-        it('throws TypeError when globalThis.crypto is undefined', () => {
-            const originalCrypto = globalThis.crypto;
+        it('throws a descriptive TypeError when Web Crypto or getRandomValues is missing', () => {
+            const MESSAGE =
+                'generate() requires Web Crypto (globalThis.crypto.getRandomValues), which this runtime lacks';
+            const originalDescriptor = Object.getOwnPropertyDescriptor(globalThis, 'crypto');
             try {
-                // Temporarily mask crypto
-                Object.defineProperty(globalThis, 'crypto', {
-                    value: undefined,
-                    configurable: true,
-                    writable: true,
-                });
+                for (const value of [undefined, null, {}, { getRandomValues: 'not a function' }]) {
+                    // Temporarily mask crypto
+                    Object.defineProperty(globalThis, 'crypto', { value, configurable: true, writable: true });
 
-                expect(() => generate()).toThrow(TypeError);
-                expect(() => generateFormatted()).toThrow(TypeError);
+                    expect(() => generate()).toThrow(new TypeError(MESSAGE));
+                    expect(() => generateFormatted()).toThrow(new TypeError(MESSAGE));
+                }
             } finally {
-                Object.defineProperty(globalThis, 'crypto', {
-                    value: originalCrypto,
-                    configurable: true,
-                    writable: true,
-                });
+                if (originalDescriptor) {
+                    Object.defineProperty(globalThis, 'crypto', originalDescriptor);
+                }
             }
         });
     });

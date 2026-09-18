@@ -97,8 +97,14 @@ function checkValue(sum: number): number {
  * @throws {TypeError} If the runtime has no global Web Crypto (`globalThis.crypto.getRandomValues`), e.g. Node.js 18 and older.
  */
 export function generate(): SID {
+    const webCrypto = globalThis.crypto;
+    if (typeof webCrypto?.getRandomValues !== 'function') {
+        throw new TypeError(
+            'generate() requires Web Crypto (globalThis.crypto.getRandomValues), which this runtime lacks',
+        );
+    }
     const bytes = new Uint8Array(PAYLOAD_LENGTH);
-    globalThis.crypto.getRandomValues(bytes);
+    webCrypto.getRandomValues(bytes);
 
     let payload = '';
     let sum = 0;
