@@ -54,13 +54,15 @@
         "test": "bun test && bun run test:types",
         "test:types": "tsc --noEmit -p tsconfig.test.json",
         "test:dist": "node tests/smoke/smoke.mjs && node tests/smoke/smoke.cjs",
+        "test:package": "mkdir -p node_modules/.cache/sid-pack && bun pm pack --filename node_modules/.cache/sid-pack/package.tgz --quiet && attw --profile esm-only node_modules/.cache/sid-pack/package.tgz",
         "coverage": "bun test --coverage",
         "lint": "biome check .",
         "lint:fix": "biome check --write .",
-        "check": "bun run lint && bun run test && bun run build && bun run test:dist",
+        "check": "bun run lint && bun run test && bun run build && bun run test:dist && bun run test:package",
         "prepublishOnly": "bun run check"
     },
     "devDependencies": {
+        "@arethetypeswrong/cli": "^0.18.5",
         "@biomejs/biome": "^2.5.11",
         "@types/bun": "^1.4.0",
         "fast-check": "^4.10.1",
