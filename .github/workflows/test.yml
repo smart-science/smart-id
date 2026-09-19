@@ -1,4 +1,5 @@
 name: Test
+run-name: 'Test: ${{ github.event.pull_request.title || github.event.head_commit.message || github.ref_name }}'
 
 on:
   push:
@@ -33,7 +34,7 @@ jobs:
 
       - name: Test & Coverage
         shell: bash
-        run: set -o pipefail; bun test --coverage 2>&1 | tee coverage.txt
+        run: set -o pipefail; bun test --coverage --only-failures 2>&1 | tee coverage.txt
 
       - name: Create Coverage Summary
         if: always()

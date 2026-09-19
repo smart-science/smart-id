@@ -1,4 +1,5 @@
 name: Package
+run-name: 'Package: ${{ github.event.pull_request.title || github.event.head_commit.message || github.ref_name }}'
 
 # Checks the packed tarball's type resolution; runs only when something that shapes the package changes.
 on:
