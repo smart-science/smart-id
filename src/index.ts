@@ -11,6 +11,7 @@
  * Validated, canonical 16-character identifier. A branded string: plain at runtime, distinct from `string`
  * at compile time. Obtain it from `generate()`, `parse()`, or `isSID()`; `__sidBrand` exists only in the type.
  */
+// biome-ignore lint/style/useNamingConvention: public API name + type-only brand key
 export type SID = string & { readonly __sidBrand: 'SID' };
 
 /**
@@ -18,6 +19,7 @@ export type SID = string & { readonly __sidBrand: 'SID' };
  * Obtain it from `generateFormatted()`, `format()`, or `isFormattedSID()`.
  */
 export type FormattedSID = `${string}-${string}-${string}-${string}` & {
+    // biome-ignore lint/style/useNamingConvention: type-only brand key
     readonly __sidBrand: 'FormattedSID';
 };
 

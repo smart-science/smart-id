@@ -19,8 +19,8 @@ import type {
     SidErrorCode,
     SidResult,
     verify,
-} from '../../src/index';
-import type { Equal, Expect, ExpectFalse, Extends } from './type-utils';
+} from '../../src/index.js';
+import type { Equal, Expect, ExpectFalse, Extends } from './type-utils.js';
 
 // -------------------------------------------------------------------
 // 2. Return Type Invariants

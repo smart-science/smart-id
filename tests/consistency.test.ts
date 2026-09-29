@@ -9,8 +9,8 @@
 
 import { describe, expect, it } from 'bun:test';
 import fc from 'fast-check';
-import { format, isFormattedSID, isSID, parse, verify } from '../src/index';
-import { ALPHABET, quad, VALID_ID, VALID_ID_2, VALID_ID_ALL_ZERO } from './helpers';
+import { format, isFormattedSID, isSID, parse, verify } from '../src/index.js';
+import { ALPHABET, quad, VALID_ID, VALID_ID_2, VALID_ID_ALL_ZERO } from './helpers.js';
 
 // -------------------------------------------------------------------
 // 2. Configuration & Constants

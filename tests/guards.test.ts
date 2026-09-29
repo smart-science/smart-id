@@ -8,8 +8,8 @@
 // -------------------------------------------------------------------
 
 import { describe, expect, it } from 'bun:test';
-import { isFormattedSID, isSID } from '../src/index';
-import { quad, VALID_ID, VALID_ID_2, VALID_ID_ALL_ZERO } from './helpers';
+import { isFormattedSID, isSID } from '../src/index.js';
+import { quad, VALID_ID, VALID_ID_2, VALID_ID_ALL_ZERO } from './helpers.js';
 
 // -------------------------------------------------------------------
 // 2. Test Suite: Strict Type Guards

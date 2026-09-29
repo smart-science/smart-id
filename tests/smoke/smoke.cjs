@@ -29,5 +29,6 @@ assert.deepEqual(Object.keys(require('@smart-science/sid')).sort(), [
     'parse',
     'verify',
 ]);
+assert.equal(require('@smart-science/sid/package.json').name, '@smart-science/sid');
 
 console.log('CJS smoke test passed.');

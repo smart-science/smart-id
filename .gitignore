@@ -1,3 +1,12 @@
+# General
+.DS_Store
+Thumbs.db
+*.tgz
+*.tar.gz
+
+# Editor
+#.vscode - keep
+
 # Dependencies
 node_modules/
 package-lock.json
@@ -5,28 +14,29 @@ yarn.lock
 pnpm-lock.yaml
 npm-debug.log*
 yarn-error.log*
+# bun.lock is committed
+
+# Agents
+.agents/
+AGENTS.md
+.claude/
+CLAUDE.md
 
 # Build
 dist/
 build/
 *.tsbuildinfo
 
-# Environment
+# Env
 .env
-.env.local
-.env.development
-.env.test
-.env.production
+.env.*
+!.env.example
 
-# Temporary
+# Temp
 temp/
 *.temp
 scratch/
 *.scratch
-
-# Editor / OS
-.vscode/*
-!.vscode/settings.json
-.idea/
-.agents/
-AGENTS.md
+.cache/
+coverage/
+*.log

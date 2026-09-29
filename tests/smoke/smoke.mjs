@@ -33,5 +33,6 @@ assert.deepEqual(Object.keys(api).sort(), [
     'parse',
     'verify',
 ]);
+assert.equal((await import('@smart-science/sid/package.json', { with: { type: 'json' } })).default.name, '@smart-science/sid');
 
 console.log('ESM smoke test passed.');

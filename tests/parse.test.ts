@@ -8,8 +8,8 @@
 // -------------------------------------------------------------------
 
 import { describe, expect, it } from 'bun:test';
-import { format, parse, verify } from '../src/index';
-import { quad, VALID_ID } from './helpers';
+import { format, parse, verify } from '../src/index.js';
+import { quad, VALID_ID } from './helpers.js';
 
 // -------------------------------------------------------------------
 // 2. Test Suite: parse() & Unicode Normalization

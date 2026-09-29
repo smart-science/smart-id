@@ -8,7 +8,7 @@
 // -------------------------------------------------------------------
 
 import { describe, expect, it } from 'bun:test';
-import * as sid from '../src/index';
+import * as sid from '../src/index.js';
 
 // -------------------------------------------------------------------
 // 2. Test Suite: Public Runtime API

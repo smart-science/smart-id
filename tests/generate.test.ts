@@ -8,8 +8,8 @@
 // -------------------------------------------------------------------
 
 import { describe, expect, it, spyOn } from 'bun:test';
-import { generate, generateFormatted, parse, type SID, verify } from '../src/index';
-import { ALPHABET } from './helpers';
+import { generate, generateFormatted, parse, type SID, verify } from '../src/index.js';
+import { ALPHABET } from './helpers.js';
 
 // -------------------------------------------------------------------
 // 2. Test Suite: generate() & generateFormatted()

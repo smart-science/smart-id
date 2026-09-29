@@ -8,8 +8,8 @@
 // -------------------------------------------------------------------
 
 import { describe, expect, it } from 'bun:test';
-import { format, parse, type SID, verify } from '../src/index';
-import { ALPHABET, quad, VALID_ID } from './helpers';
+import { format, parse, type SID, verify } from '../src/index.js';
+import { ALPHABET, quad, VALID_ID } from './helpers.js';
 
 // -------------------------------------------------------------------
 // 2. Constants & Golden Vectors

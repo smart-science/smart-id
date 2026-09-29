@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import type { FormattedSID, SID } from '../src/index';
+import type { FormattedSID, SID } from '../src/index.js';
 
 /** Canonical Crockford Base32 alphabet for tests. */
 export const ALPHABET = '0123456789ABCDEFGHJKMNPQRSTVWXYZ';

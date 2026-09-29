@@ -8,7 +8,7 @@
 // -------------------------------------------------------------------
 
 import { describe, expect, it } from 'bun:test';
-import { format, isFormattedSID, isSID, parse, verify } from '../src/index';
+import { format, isFormattedSID, isSID, parse, verify } from '../src/index.js';
 
 // -------------------------------------------------------------------
 // 2. Hostile & Unusual Inputs
