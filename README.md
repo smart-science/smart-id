@@ -1,6 +1,6 @@
 # SID (smart-id)
 
-Fast 16-character identifiers with a check character: generate, parse, format, and verify. For TypeScript and JavaScript, with no dependencies.
+Fast 20-character identifiers with two check characters: generate, parse, format, and verify. For TypeScript and JavaScript, with no dependencies.
 
 ---
 
@@ -25,23 +25,23 @@ import { format, generate, generateFormatted, isFormattedSID, isSID, parse, veri
 ### Create an ID: `generate()` and `generateFormatted()`
 
 ```ts
-const id = generate(); // '0123456789ABCDE7'
-const pretty = generateFormatted(); // '0123-4567-89AB-CDE7'
+const id = generate(); // '0123456789ABCDEFGHWJ'
+const pretty = generateFormatted(); // '0123-4567-89AB-CDEF-GHWJ'
 ```
 
-- `generate()` returns a new random 16-character ID, typed `SID`.
+- `generate()` returns a new random 20-character ID, typed `SID`.
 - `generateFormatted()` returns the same kind of ID grouped for reading, typed `FormattedSID`.
 
 Both throw a `TypeError` if the runtime has no Web Crypto (which every supported runtime has).
 
 ### Read an ID: `parse(input)`
 
-Use `parse()` whenever an ID comes from outside. It accepts both forms, cleans up the input, and returns the canonical 16-character ID:
+Use `parse()` whenever an ID comes from outside. It accepts both forms, cleans up the input, and returns the canonical 20-character ID:
 
 ```ts
-parse('0123-4567-89AB-CDE7'); // { ok: true, data: '0123456789ABCDE7' }
-parse(' oi23-4567-89ab-cde7 '); // { ok: true, data: '0123456789ABCDE7' } (see "Self-repairing input")
-parse('0123-4567-89AB-CDE8'); // { ok: false, code: 'CHECKSUM_MISMATCH', error: '...' }
+parse('0123-4567-89AB-CDEF-GHWJ'); // { ok: true, data: '0123456789ABCDEFGHWJ' }
+parse(' oi23-4567-89ab-cdef-ghwj '); // { ok: true, data: '0123456789ABCDEFGHWJ' } (see "Self-repairing input")
+parse('0123-4567-89AB-CDEF-GHWK'); // { ok: false, code: 'CHECKSUM_MISMATCH', error: '...' }
 ```
 
 The result is either `{ ok: true, data }` or `{ ok: false, code, error }`. Check `ok` first:
@@ -59,11 +59,11 @@ Always store and compare the canonical `res.data`, never the raw input.
 
 ### Display an ID: `format(input)`
 
-Works like `parse()`, but returns the hyphenated form `XXXX-XXXX-XXXX-XXXX`, typed `FormattedSID`:
+Works like `parse()`, but returns the hyphenated form `XXXX-XXXX-XXXX-XXXX-XXXX`, typed `FormattedSID`:
 
 ```ts
-format('0123456789ABCDE7'); // { ok: true, data: '0123-4567-89AB-CDE7' }
-format('0123456789abcde7'); // { ok: true, data: '0123-4567-89AB-CDE7' }
+format('0123456789ABCDEFGHWJ'); // { ok: true, data: '0123-4567-89AB-CDEF-GHWJ' }
+format('0123456789abcdefghwj'); // { ok: true, data: '0123-4567-89AB-CDEF-GHWJ' }
 format('not an id'); // { ok: false, code: 'INVALID_LENGTH', error: '...' }
 ```
 
@@ -72,8 +72,8 @@ format('not an id'); // { ok: false, code: 'INVALID_LENGTH', error: '...' }
 Returns `true` or `false`. It accepts the same forgiving input as `parse()`:
 
 ```ts
-verify('0123-4567-89ab-cde7'); // true
-verify('0123-4567-89AB-CDE8'); // false (wrong check character)
+verify('0123-4567-89ab-cdef-ghwj'); // true
+verify('0123-4567-89AB-CDEF-GHWK'); // false (wrong check characters)
 ```
 
 Use `parse()` instead if you want to keep the ID, because `verify()` doesn't return the cleaned-up form.
@@ -83,10 +83,10 @@ Use `parse()` instead if you want to keep the ID, because `verify()` doesn't ret
 Return `true` only when the input is already exactly in canonical form: uppercase, no extra spaces, no repaired characters. They are useful for checking data you store yourself:
 
 ```ts
-isSID('0123456789ABCDE7'); // true
-isSID('0123456789abcde7'); // false (valid, but not canonical: use parse())
-isFormattedSID('0123-4567-89AB-CDE7'); // true
-isFormattedSID('0123456789ABCDE7'); // false (not hyphenated)
+isSID('0123456789ABCDEFGHWJ'); // true
+isSID('0123456789abcdefghwj'); // false (valid, but not canonical: use parse())
+isFormattedSID('0123-4567-89AB-CDEF-GHWJ'); // true
+isFormattedSID('0123456789ABCDEFGHWJ'); // false (not hyphenated)
 ```
 
 In TypeScript, a `true` result also narrows the value's type to `SID` or `FormattedSID`.
@@ -123,7 +123,7 @@ All functions that take input accept any value, including `null`, numbers, and o
 | `INVALID_LENGTH` | Too short or too long for an ID |
 | `INVALID_FORMAT` | The right length for the hyphenated form, but the hyphens are in the wrong places |
 | `INVALID_CHARACTER` | Contains a character that can't appear in an ID; `error` names it |
-| `CHECKSUM_MISMATCH` | All characters are allowed, but the check character doesn't match: most likely a typo |
+| `CHECKSUM_MISMATCH` | All characters are allowed, but the check characters don't match: most likely a typo |
 
 ---
 
@@ -153,9 +153,9 @@ load(input as SID); // OK: a cast, unsafe if unchecked
 
 ### Characters
 
-An ID has 16 characters drawn from 32 symbols (Crockford's Base32): digits `0`–`9` and letters `A`–`Z` **without `I`, `L`, `O`, and `U`**. Left out because easily confused with `1` and `0` (and `U` to avoid *accidental* words).
+An ID has 20 characters drawn from 32 symbols (Crockford's Base32): digits `0`–`9` and letters `A`–`Z` **without `I`, `L`, `O`, and `U`**. Left out because easily confused with `1` and `0` (and `U` to avoid *accidental* words).
 
-First 15 characters are random, which gives about 3.8 × 10²² possible IDs. Two randomly generated IDs are practically never the same. The 16th character is a **check character** computed from the other 15.
+First 18 characters are random, which gives about 1.24 × 10²⁷ possible IDs. Two randomly generated IDs are practically never the same. The last two characters are **check characters**: each of the first 18 characters is multiplied by its position (1 to 18), the products are summed, and the sum modulo 1024 is written as two characters.
 
 ### Self-repairing input
 
@@ -164,11 +164,12 @@ First 15 characters are random, which gives about 3.8 × 10²² possible IDs. Tw
 - surrounding spaces are ignored
 - the hyphenated and plain forms are both accepted
 
-### What the check character catches
+### What the check characters catch
 
-- **Any single wrong character** is always detected.
-- **Two neighboring characters swapped** (`…AB…` typed as `…BA…`) is detected, except for a few rare character pairs such as `0` and `G`.
-- **Not detected:** swaps of characters that are two positions apart, and some combinations of several errors. The check guards against typos. It is not a guarantee that random input can never pass.
+- **Any single wrong character** is always detected, including in the check characters.
+- **Any two characters swapped** (`…AB…` typed as `…BA…`) is always detected, at any distance and at any of the 20 positions.
+- **Random input** passes with a probability of 1 in 1024.
+- **Not detected:** some combinations of several errors (about 0.32% of inputs with two wrong characters). The check guards against typos. It is not a guarantee that random input can never pass.
 
 ### What an ID does not do
 

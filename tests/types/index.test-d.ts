@@ -57,7 +57,9 @@ export type Test_SID_Extends_String = Expect<Extends<SID, string>>;
 export type Test_FormattedSID_Extends_String = Expect<Extends<FormattedSID, string>>;
 
 // 3.3 FormattedSID matches quad-grouped template literal pattern.
-export type Test_FormattedSID_Pattern = Expect<Extends<FormattedSID, `${string}-${string}-${string}-${string}`>>;
+export type Test_FormattedSID_Pattern = Expect<
+    Extends<FormattedSID, `${string}-${string}-${string}-${string}-${string}`>
+>;
 
 // 3.4 unvalidated string cannot be assigned to nominal SID.
 export type Test_String_Does_Not_Extend_SID = ExpectFalse<Extends<string, SID>>;
@@ -74,7 +76,7 @@ export type Test_FormattedSID_Does_Not_Extend_SID = ExpectFalse<Extends<Formatte
 // 3.8 Brand shapes are pinned: changing them breaks assignability between two installed copies of the package.
 export type Test_SID_Brand_Shape = Expect<Equal<SID, string & { readonly __sidBrand: 'SID' }>>;
 export type Test_FormattedSID_Brand_Shape = Expect<
-    Equal<FormattedSID, `${string}-${string}-${string}-${string}` & { readonly __sidBrand: 'FormattedSID' }>
+    Equal<FormattedSID, `${string}-${string}-${string}-${string}-${string}` & { readonly __sidBrand: 'FormattedSID' }>
 >;
 
 // -------------------------------------------------------------------

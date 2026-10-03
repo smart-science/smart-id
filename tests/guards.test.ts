@@ -14,7 +14,7 @@ import { quad, VALID_ID, VALID_ID_2, VALID_ID_ALL_ZERO } from './helpers.js';
 
 describe('Strict Type Guards: isSID() and isFormattedSID()', () => {
     describe('isSID()', () => {
-        it('returns true only for exact canonical 16-character uppercase identifiers', () => {
+        it('returns true only for exact canonical 20-character uppercase identifiers', () => {
             expect(isSID(VALID_ID)).toBe(true);
             expect(isSID(VALID_ID_2)).toBe(true);
             expect(isSID(VALID_ID_ALL_ZERO)).toBe(true);
@@ -37,23 +37,23 @@ describe('Strict Type Guards: isSID() and isFormattedSID()', () => {
 
         it('returns false for repaired ambiguous character inputs', () => {
             // 'OI23...' repairs to '0123...' under parse(), but is not canonical input
-            expect(isSID('OI23456789ABCDE7')).toBe(false);
-            expect(isSID('OL23456789ABCDE7')).toBe(false);
+            expect(isSID('OI23456789ABCDEFGHWJ')).toBe(false);
+            expect(isSID('OL23456789ABCDEFGHWJ')).toBe(false);
         });
 
         it('returns false for invalid lengths', () => {
             expect(isSID('')).toBe(false);
-            expect(isSID('0123456789ABCDE')).toBe(false);
-            expect(isSID('0123456789ABCDEFG')).toBe(false);
+            expect(isSID('0123456789ABCDEFGHW')).toBe(false);
+            expect(isSID('0123456789ABCDEFGHWJ0')).toBe(false);
         });
 
         it('returns false for valid alphabet with invalid checksum', () => {
-            expect(isSID('0123456789ABCDEF')).toBe(false);
+            expect(isSID('0123456789ABCDEFGHWK')).toBe(false);
         });
     });
 
     describe('isFormattedSID()', () => {
-        it('returns true only for exact canonical XXXX-XXXX-XXXX-XXXX uppercase strings', () => {
+        it('returns true only for exact canonical XXXX-XXXX-XXXX-XXXX-XXXX uppercase strings', () => {
             expect(isFormattedSID(quad(VALID_ID))).toBe(true);
             expect(isFormattedSID(quad(VALID_ID_2))).toBe(true);
         });
@@ -74,19 +74,19 @@ describe('Strict Type Guards: isSID() and isFormattedSID()', () => {
         });
 
         it('returns false for repaired ambiguous characters inside formatted strings', () => {
-            expect(isFormattedSID('oi23-4567-89ab-cde7')).toBe(false);
-            expect(isFormattedSID('OI23-4567-89AB-CDE7')).toBe(false);
+            expect(isFormattedSID('oi23-4567-89ab-cdef-ghwj')).toBe(false);
+            expect(isFormattedSID('OI23-4567-89AB-CDEF-GHWJ')).toBe(false);
         });
 
         it('returns false for misplaced hyphens and invalid lengths', () => {
-            expect(isFormattedSID('0123--567-89AB-CDE7')).toBe(false);
-            expect(isFormattedSID('01234-5678-9ABC-DE7')).toBe(false);
-            expect(isFormattedSID('0123-4567-89AB-CDE')).toBe(false);
+            expect(isFormattedSID('0123--567-89AB-CDEF-GHWJ')).toBe(false);
+            expect(isFormattedSID('01234-5678-9ABC-DEFG-HWJ')).toBe(false);
+            expect(isFormattedSID('0123-4567-89AB-CDEF-GHW')).toBe(false);
         });
 
         it('returns false for invalid characters or checksum failure', () => {
-            expect(isFormattedSID('0123-4567-89AB-CDEU')).toBe(false);
-            expect(isFormattedSID('0123-4567-89AB-CDEF')).toBe(false);
+            expect(isFormattedSID('0123-4567-89AB-CDEF-GHWU')).toBe(false);
+            expect(isFormattedSID('0123-4567-89AB-CDEF-GHWK')).toBe(false);
         });
     });
 });

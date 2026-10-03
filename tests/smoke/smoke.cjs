@@ -12,13 +12,13 @@ if (process.env.CI) {
 const { format, generate, generateFormatted, isFormattedSID, isSID, parse, verify } = require('@smart-science/sid');
 
 const id = generate();
-assert.equal(id.length, 16);
-assert.equal(verify('0123456789ABCDE7'), true);
+assert.equal(id.length, 20);
+assert.equal(verify('0123456789ABCDEFGHWJ'), true);
 assert.equal(verify(null), false);
 assert.equal(isSID(id), true);
 assert.equal(isFormattedSID(generateFormatted()), true);
-assert.deepEqual(format('0123456789ABCDE7'), { ok: true, data: '0123-4567-89AB-CDE7' });
-assert.equal(parse('0123456789ABCDEN').code, 'CHECKSUM_MISMATCH');
+assert.deepEqual(format('0123456789ABCDEFGHWJ'), { ok: true, data: '0123-4567-89AB-CDEF-GHWJ' });
+assert.equal(parse('0123456789ABCDEFGHWK').code, 'CHECKSUM_MISMATCH');
 
 assert.deepEqual(Object.keys(require('@smart-science/sid')).sort(), [
     'format',

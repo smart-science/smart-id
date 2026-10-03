@@ -20,7 +20,7 @@ import { ALPHABET, quad, VALID_ID, VALID_ID_2, VALID_ID_ALL_ZERO } from './helpe
 const SEED = 0x51d_2026;
 const NUM_RUNS = 10_000;
 
-const CANONICAL_REGEX = /^[0-9A-HJKMNP-TV-Z]{16}$/;
+const CANONICAL_REGEX = /^[0-9A-HJKMNP-TV-Z]{20}$/;
 
 /** `true` if every UTF-16 code unit is ASCII. */
 function isAscii(str: string): boolean {
@@ -37,10 +37,10 @@ const SEED_IDS = [
     VALID_ID,
     VALID_ID_2,
     VALID_ID_ALL_ZERO,
-    'ZZZZZZZZZZZZZZZZ',
-    'K4MR7T2PQ9XH3WNA',
-    '1111111111111111',
-    'SSSSSSSSSSSSSSSS',
+    'ZZZZZZZZZZZZZZZZZZ5N',
+    'K4MR7T2PQ9XH3WNB8DKM',
+    '1111111111111111115B',
+    'SSSSSSSSSSSSSSSSSS5K',
 ] as const;
 
 /** Non-ASCII characters that uppercase, fold, or trim into something ASCII-like. */
@@ -99,7 +99,7 @@ const mutatedId = fc
 const idWithNonAsciiChar = fc
     .record({
         base: fc.constantFrom(...SEED_IDS),
-        pos: fc.integer({ min: 0, max: 15 }),
+        pos: fc.integer({ min: 0, max: 19 }),
         char: fc.oneof(
             fc.constantFrom(...NON_ASCII_TRICKY),
             fc.string({ unit: 'binary', minLength: 1, maxLength: 1 }).filter((c) => !isAscii(c)),
@@ -174,7 +174,7 @@ describe('Property-based consistency (fast-check)', () => {
 
     it('holds all invariants for arbitrary Unicode strings', () => {
         fc.assert(
-            fc.property(fc.string({ unit: 'binary', maxLength: 24 }), (input) => {
+            fc.property(fc.string({ unit: 'binary', maxLength: 28 }), (input) => {
                 assertInvariants(input);
             }),
             { seed: SEED, numRuns: NUM_RUNS },

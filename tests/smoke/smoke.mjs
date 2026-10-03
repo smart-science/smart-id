@@ -12,17 +12,17 @@ if (process.env.CI) {
 import { format, generate, generateFormatted, isFormattedSID, isSID, parse, verify } from '@smart-science/sid';
 
 const id = generate();
-assert.equal(id.length, 16);
+assert.equal(id.length, 20);
 assert.ok(verify(id));
 assert.ok(verify(generateFormatted()));
-assert.deepEqual(parse('0123-4567-89AB-CDE7'), { ok: true, data: '0123456789ABCDE7' });
-assert.deepEqual(format('0123456789ABCDE7'), { ok: true, data: '0123-4567-89AB-CDE7' });
+assert.deepEqual(parse('0123-4567-89AB-CDEF-GHWJ'), { ok: true, data: '0123456789ABCDEFGHWJ' });
+assert.deepEqual(format('0123456789ABCDEFGHWJ'), { ok: true, data: '0123-4567-89AB-CDEF-GHWJ' });
 assert.equal(verify(null), false);
 assert.equal(isSID(id), true);
-assert.equal(isSID('0123456789abcde7'), false);
+assert.equal(isSID('0123456789abcdefghwj'), false);
 assert.equal(isFormattedSID(generateFormatted()), true);
 assert.deepEqual(parse(null), { ok: false, code: 'NOT_A_STRING', error: 'Expected string input, received null' });
-assert.equal(parse('0123456789ABCDEN').code, 'CHECKSUM_MISMATCH');
+assert.equal(parse('0123456789ABCDEFGHWK').code, 'CHECKSUM_MISMATCH');
 const api = await import('@smart-science/sid');
 assert.deepEqual(Object.keys(api).sort(), [
     'format',
