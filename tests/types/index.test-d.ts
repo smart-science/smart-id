@@ -5,8 +5,10 @@
 // -------------------------------------------------------------------
 
 import type {
+    CROCKFORD_ALPHABET,
     FormattedSID,
     format,
+    fromBytes,
     generate,
     generateFormatted,
     isFormattedSID,
@@ -45,6 +47,13 @@ export type Test_IsSID_TypeGuard = Expect<Extends<typeof isSID, (input: unknown)
 export type Test_IsFormattedSID_TypeGuard = Expect<
     Extends<typeof isFormattedSID, (input: unknown) => input is FormattedSID>
 >;
+
+// 2.8 fromBytes takes a Uint8Array and returns SID or null.
+export type Test_FromBytes_ReturnType = Expect<Equal<ReturnType<typeof fromBytes>, SID | null>>;
+export type Test_FromBytes_Parameters = Expect<Equal<Parameters<typeof fromBytes>, [bytes: Uint8Array]>>;
+
+// 2.9 CROCKFORD_ALPHABET is the literal alphabet type.
+export type Test_CrockfordAlphabet_Type = Expect<Equal<typeof CROCKFORD_ALPHABET, '0123456789ABCDEFGHJKMNPQRSTVWXYZ'>>;
 
 // -------------------------------------------------------------------
 // 3. Nominal Branding & Subtype Invariants

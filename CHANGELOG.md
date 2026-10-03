@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- `fromBytes(bytes)` derives a deterministic `SID` from the first 90 bits of a `Uint8Array` (e.g. a SHA-256 digest). Returns `null` for fewer than 12 bytes or non-`Uint8Array` input; never throws.
+- `CROCKFORD_ALPHABET` exports the 32-character alphabet in value order.
+
 ### Changed
 
 - **BREAKING**: IDs have 20 characters (18 random + 2 check characters, 90 bits of randomness) instead of 16. The hyphenated form has five groups: `XXXX-XXXX-XXXX-XXXX-XXXX` (24 characters).
@@ -29,7 +34,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **BREAKING**: `Result<T>` is renamed to `SidResult<T>`.
 - Error messages reworded: `null` input is reported as `null`, both valid lengths are named, hyphen positions are marked as 0-based, input is quoted as trimmed (with hyphens), and `INVALID_CHARACTER` names the offending character and its index. Branch on `code` instead of matching `error`.
 - `generate()` and `generateFormatted()` throw a `TypeError` that names the missing Web Crypto API instead of the runtime's generic property-access error.
-- `engines.node` narrowed to `^20.19.0 || >=22.12.0`, where `require()` of the package works; `engines.bun` raised to `>=1.3.0`.
 - **BREAKING**: The check character continues the alternating 1/3 weights (weight 3), so swapping the last two characters is now detected. IDs created with 0.1.x may no longer verify.
 
 ### Removed
@@ -57,7 +61,6 @@ Tagged in git only; not published to npm.
 
 - `require('@smart-science/sid')` failed with `ERR_PACKAGE_PATH_NOT_EXPORTED`; it now works on Node.js 20.19 and later.
 - `verify()` and `parse()` accepted some non-ASCII input (`ß`, `ı`, `ſ`, `ﬁ`) through Unicode case mapping.
-- `engines.node` corrected to `>=20.19.0`, because Node.js 18 has no global Web Crypto.
 
 ## [0.1.0] - 2026-08-30
 

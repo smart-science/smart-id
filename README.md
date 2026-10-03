@@ -18,13 +18,11 @@ npm install @smart-science/sid
 
 ## Usage
 
-```ts
-import { format, generate, generateFormatted, isFormattedSID, isSID, parse, verify } from '@smart-science/sid';
-```
-
 ### Create an ID: `generate()` and `generateFormatted()`
 
 ```ts
+import { generate, generateFormatted } from '@smart-science/sid';
+
 const id = generate(); // '0123456789ABCDEFGHWJ'
 const pretty = generateFormatted(); // '0123-4567-89AB-CDEF-GHWJ'
 ```
@@ -34,11 +32,33 @@ const pretty = generateFormatted(); // '0123-4567-89AB-CDEF-GHWJ'
 
 Both throw a `TypeError` if the runtime has no Web Crypto (which every supported runtime has).
 
+### Derive an ID from bytes: `fromBytes(bytes)`
+
+Returns the same ID for the same bytes, for example to derive an ID from an existing key. Hash the input yourself and pass the digest:
+
+```ts
+import { fromBytes } from '@smart-science/sid';
+
+// Node.js / Bun
+import { createHash } from 'node:crypto';
+const id = fromBytes(createHash('sha256').update('10.1000/xyz123').digest());
+
+// browsers
+const data = new TextEncoder().encode('10.1000/xyz123');
+const id = fromBytes(new Uint8Array(await crypto.subtle.digest('SHA-256', data)));
+```
+
+- Only the first 90 bits (12 bytes) are used; a full 32-byte SHA-256 digest can be passed directly.
+- Returns `null` for fewer than 12 bytes or input that is not a `Uint8Array` (a Node.js `Buffer` is accepted).
+- The output is not random: anyone with the same input gets the same ID.
+
 ### Read an ID: `parse(input)`
 
 Use `parse()` whenever an ID comes from outside. It accepts both forms, cleans up the input, and returns the canonical 20-character ID:
 
 ```ts
+import { parse } from '@smart-science/sid';
+
 parse('0123-4567-89AB-CDEF-GHWJ'); // { ok: true, data: '0123456789ABCDEFGHWJ' }
 parse(' oi23-4567-89ab-cdef-ghwj '); // { ok: true, data: '0123456789ABCDEFGHWJ' } (see "Self-repairing input")
 parse('0123-4567-89AB-CDEF-GHWK'); // { ok: false, code: 'CHECKSUM_MISMATCH', error: '...' }
@@ -62,6 +82,8 @@ Always store and compare the canonical `res.data`, never the raw input.
 Works like `parse()`, but returns the hyphenated form `XXXX-XXXX-XXXX-XXXX-XXXX`, typed `FormattedSID`:
 
 ```ts
+import { format } from '@smart-science/sid';
+
 format('0123456789ABCDEFGHWJ'); // { ok: true, data: '0123-4567-89AB-CDEF-GHWJ' }
 format('0123456789abcdefghwj'); // { ok: true, data: '0123-4567-89AB-CDEF-GHWJ' }
 format('not an id'); // { ok: false, code: 'INVALID_LENGTH', error: '...' }
@@ -72,6 +94,8 @@ format('not an id'); // { ok: false, code: 'INVALID_LENGTH', error: '...' }
 Returns `true` or `false`. It accepts the same forgiving input as `parse()`:
 
 ```ts
+import { verify } from '@smart-science/sid';
+
 verify('0123-4567-89ab-cdef-ghwj'); // true
 verify('0123-4567-89AB-CDEF-GHWK'); // false (wrong check characters)
 ```
@@ -83,6 +107,8 @@ Use `parse()` instead if you want to keep the ID, because `verify()` doesn't ret
 Return `true` only when the input is already exactly in canonical form: uppercase, no extra spaces, no repaired characters. They are useful for checking data you store yourself:
 
 ```ts
+import { isFormattedSID, isSID } from '@smart-science/sid';
+
 isSID('0123456789ABCDEFGHWJ'); // true
 isSID('0123456789abcdefghwj'); // false (valid, but not canonical: use parse())
 isFormattedSID('0123-4567-89AB-CDEF-GHWJ'); // true
@@ -92,6 +118,8 @@ isFormattedSID('0123456789ABCDEFGHWJ'); // false (not hyphenated)
 In TypeScript, a `true` result also narrows the value's type to `SID` or `FormattedSID`.
 
 ```ts
+import type { FormattedSID, SID } from '@smart-science/sid';
+
 declare const input: unknown;
 
 if (isSID(input)) {
@@ -153,7 +181,7 @@ load(input as SID); // OK: a cast, unsafe if unchecked
 
 ### Characters
 
-An ID has 20 characters drawn from 32 symbols (Crockford's Base32): digits `0`–`9` and letters `A`–`Z` **without `I`, `L`, `O`, and `U`**. Left out because easily confused with `1` and `0` (and `U` to avoid *accidental* words).
+An ID has 20 characters drawn from 32 symbols (Crockford's Base32): digits `0`–`9` and letters `A`–`Z` **without `I`, `L`, `O`, and `U`**. Left out because easily confused with `1` and `0` (and `U` to avoid *accidental* words). The 32 symbols are exported in order as `CROCKFORD_ALPHABET`, for example to build input masks.
 
 First 18 characters are random, which gives about 1.24 × 10²⁷ possible IDs. Two randomly generated IDs are practically never the same. The last two characters are **check characters**: each of the first 18 characters is multiplied by its position (1 to 18), the products are summed, and the sum modulo 1024 is written as two characters.
 

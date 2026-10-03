@@ -6,7 +6,7 @@
 
 /**
  * Validated, canonical 20-character identifier. A branded string: plain at runtime, distinct from `string`
- * at compile time. Obtain it from `generate()`, `parse()`, or `isSID()`; `__sidBrand` exists only in the type.
+ * at compile time. Obtain it from `generate()`, `fromBytes()`, `parse()`, or `isSID()`; `__sidBrand` exists only in the type.
  */
 // biome-ignore lint/style/useNamingConvention: public API name + type-only brand key
 export type SID = string & { readonly __sidBrand: 'SID' };
@@ -50,10 +50,20 @@ export type SidResult<T> =
 // -------------------------------------------------------------------
 
 /** Canonical Crockford Base32 alphabet: excludes [`I`, `L`, `O`, `U`]. */
-const ALPHABET = '0123456789ABCDEFGHJKMNPQRSTVWXYZ' as const;
+export const CROCKFORD_ALPHABET = '0123456789ABCDEFGHJKMNPQRSTVWXYZ' as const;
 
 /** Required length of the raw identifier payload - excl. checksum. */
 const PAYLOAD_LENGTH = 18;
+
+/** Minimum byte count for `fromBytes()`: 18 characters x 5 bits = 90 bits, rounded up to 12 bytes. */
+const MIN_BYTES = 12;
+
+/** `%TypedArray%.prototype[Symbol.toStringTag]` getter: reads `[[TypedArrayName]]`, works across realms, never throws. */
+// INTENTION: hoisted configuration reference
+const typedArrayName: ((this: unknown) => unknown) | undefined = Object.getOwnPropertyDescriptor(
+    Reflect.getPrototypeOf(Uint8Array.prototype),
+    Symbol.toStringTag,
+)?.get;
 
 /** Required length of the complete raw identifier incl. checksum (2 check characters = 10 bits). */
 const TOTAL_LENGTH = 20;
@@ -63,9 +73,9 @@ const FORMATTED_LENGTH = 24;
 
 /** ASCII decode table: canonical + lowercase chars, `I/i/L/l` -> 1, `O/o` -> 0, else -1. */
 const DECODE = new Int8Array(128).fill(-1);
-const LOWER_ALPHABET = ALPHABET.toLowerCase();
-for (let i = 0; i < ALPHABET.length; i++) {
-    const charCode = ALPHABET.charCodeAt(i);
+const LOWER_ALPHABET = CROCKFORD_ALPHABET.toLowerCase();
+for (let i = 0; i < CROCKFORD_ALPHABET.length; i++) {
+    const charCode = CROCKFORD_ALPHABET.charCodeAt(i);
     DECODE[charCode] = i;
     const lowerCharCode = LOWER_ALPHABET.charCodeAt(i);
     DECODE[lowerCharCode] = i;
@@ -104,17 +114,48 @@ export function generate(): SID {
     }
     const bytes = new Uint8Array(PAYLOAD_LENGTH);
     webCrypto.getRandomValues(bytes);
+    return encode(bytes);
+}
 
-    let payload = '';
-    let sum = 0;
-    for (let i = 0; i < PAYLOAD_LENGTH; i++) {
-        const val = (bytes[i] ?? 0) & 31;
-        sum += val * (i + 1);
-        payload += ALPHABET[val] ?? '';
+/**
+ * **Derives a deterministic 20-character identifier from raw bytes, e.g. a SHA-256 digest.**
+ *
+ * - reads the first 90 bits (MSB-first) as 18 Crockford Base32 characters; later bits are ignored
+ * - appends the 2 calculated weighted Modulo-1024 check characters
+ *
+ * Same bytes always yield the same `SID`. Hashing is left to the caller to keep the package runtime-agnostic:
+ * Node.js/Bun `createHash('sha256').update(text).digest()`, browsers `new Uint8Array(await crypto.subtle.digest('SHA-256', data))`.
+ *
+ * Never throws; safe against non-`Uint8Array` and too short inputs.
+ *
+ * @param bytes - At least 12 bytes (`Buffer` accepted).
+ * @returns Canonical 20-character unhyphenated `SID`, or `null` if `bytes` is not a `Uint8Array` or shorter than 12 bytes.
+ */
+export function fromBytes(bytes: Uint8Array): SID | null {
+    // check `isView` first: `instanceof` throws on revoked proxies.
+    if (
+        !ArrayBuffer.isView(bytes) ||
+        (!(bytes instanceof Uint8Array) && typedArrayName?.call(bytes) !== 'Uint8Array') ||
+        bytes.length < MIN_BYTES
+    ) {
+        return null;
     }
 
-    const check = checkValue(sum);
-    return (payload + (ALPHABET[(check >> 5) & 31] ?? '') + (ALPHABET[check & 31] ?? '')) as SID;
+    const values = new Uint8Array(PAYLOAD_LENGTH);
+    let buffer = 0;
+    let bits = 0;
+    let byteIndex = 0;
+    for (let i = 0; i < PAYLOAD_LENGTH; i++) {
+        if (bits < 5) {
+            buffer = (buffer << 8) | (bytes[byteIndex++] ?? 0);
+            bits += 8;
+        }
+        bits -= 5;
+        values[i] = buffer >>> bits;
+        // keep only unread bits so `buffer` never exceeds 12 bits.
+        buffer &= (1 << bits) - 1;
+    }
+    return encode(values);
 }
 
 /**
@@ -230,7 +271,7 @@ export function parse(input: unknown): SidResult<SID> {
                 error: `Invalid ID ${JSON.stringify(trimmed)} failed checksum validation`,
             };
         }
-        canonical += ALPHABET[val] ?? '';
+        canonical += CROCKFORD_ALPHABET[val] ?? '';
     }
 
     return { ok: true, data: canonical as SID };
@@ -271,6 +312,27 @@ export function format(input: unknown): SidResult<FormattedSID> {
  */
 function toQuadString(id: SID): FormattedSID {
     return `${id.slice(0, 4)}-${id.slice(4, 8)}-${id.slice(8, 12)}-${id.slice(12, 16)}-${id.slice(16, 20)}` as FormattedSID;
+}
+
+/**
+ * **Encodes the first 18 values (each masked to 5 bits) into a canonical `SID` with check characters.**
+ *
+ * Shared by `generate()` and `fromBytes()`.
+ *
+ * @param values - At least 18 values; only the low 5 bits of each are used.
+ * @returns Canonical 20-character `SID`.
+ */
+function encode(values: Uint8Array): SID {
+    let payload = '';
+    let sum = 0;
+    for (let i = 0; i < PAYLOAD_LENGTH; i++) {
+        const val = (values[i] ?? 0) & 31;
+        sum += val * (i + 1);
+        payload += CROCKFORD_ALPHABET[val] ?? '';
+    }
+
+    const check = checkValue(sum);
+    return (payload + (CROCKFORD_ALPHABET[(check >> 5) & 31] ?? '') + (CROCKFORD_ALPHABET[check & 31] ?? '')) as SID;
 }
 
 /**

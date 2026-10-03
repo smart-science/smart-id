@@ -5,7 +5,7 @@
 // -------------------------------------------------------------------
 
 import { describe, expect, it } from 'bun:test';
-import { format, isFormattedSID, isSID, parse, verify } from '../src/index.js';
+import { format, fromBytes, isFormattedSID, isSID, parse, type SID, verify } from '../src/index.js';
 
 // -------------------------------------------------------------------
 // 2. Hostile & Unusual Inputs
@@ -65,6 +65,19 @@ describe('Validation functions never throw', () => {
             expect<unknown>(format(input)).toEqual(parseRes);
             if (typeof input !== 'string' && !parseRes.ok) {
                 expect(parseRes.code).toBe('NOT_A_STRING');
+            }
+        }
+    });
+
+    it('fromBytes returns null for hostile inputs, except a valid Uint8Array', () => {
+        // runtime guard for JS callers; the cast only widens the parameter type.
+        const call = fromBytes as (input: unknown) => SID | null;
+        for (const input of HOSTILE_INPUTS) {
+            const res = call(input);
+            if (ArrayBuffer.isView(input) && input instanceof Uint8Array) {
+                expect(isSID(res)).toBe(true);
+            } else {
+                expect(res).toBeNull();
             }
         }
     });

@@ -14,7 +14,9 @@ import * as sid from '../src/index.js';
 describe('Public runtime API', () => {
     it('exports exactly the documented functions and no runtime brand values', () => {
         expect(Object.keys(sid).sort()).toEqual([
+            'CROCKFORD_ALPHABET',
             'format',
+            'fromBytes',
             'generate',
             'generateFormatted',
             'isFormattedSID',
