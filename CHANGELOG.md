@@ -18,6 +18,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **BREAKING**: The check is a weighted sum modulo 1024 (`Σ value × position`, positions 1 to 18) written as two characters. Every single wrong character and every swap of two characters is detected; random input passes with a probability of 1 in 1024. IDs created with 0.2.x no longer verify.
 - **BREAKING**: `FormattedSID` is a five-group template literal type.
 - `INVALID_LENGTH` and `INVALID_FORMAT` messages name the new lengths (20 or 24) and hyphen positions (4, 9, 14, 19).
+- **BREAKING**: `engines.node` raised to `>=22.12.0`; Node.js 20 is no longer supported.
 
 ## [0.2.0] - 2026-09-18
 
@@ -34,6 +35,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **BREAKING**: `Result<T>` is renamed to `SidResult<T>`.
 - Error messages reworded: `null` input is reported as `null`, both valid lengths are named, hyphen positions are marked as 0-based, input is quoted as trimmed (with hyphens), and `INVALID_CHARACTER` names the offending character and its index. Branch on `code` instead of matching `error`.
 - `generate()` and `generateFormatted()` throw a `TypeError` that names the missing Web Crypto API instead of the runtime's generic property-access error.
+- `engines.node` narrowed to `^20.19.0 || >=22.12.0`, where `require()` of the package works; `engines.bun` raised to `>=1.3.0`.
 - **BREAKING**: The check character continues the alternating 1/3 weights (weight 3), so swapping the last two characters is now detected. IDs created with 0.1.x may no longer verify.
 
 ### Removed
@@ -61,6 +63,7 @@ Tagged in git only; not published to npm.
 
 - `require('@smart-science/sid')` failed with `ERR_PACKAGE_PATH_NOT_EXPORTED`; it now works on Node.js 20.19 and later.
 - `verify()` and `parse()` accepted some non-ASCII input (`ß`, `ı`, `ſ`, `ﬁ`) through Unicode case mapping.
+- `engines.node` corrected to `>=20.19.0`, because Node.js 18 has no global Web Crypto.
 
 ## [0.1.0] - 2026-08-30
 

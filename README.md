@@ -210,7 +210,7 @@ First 18 characters are random, which gives about 1.24 × 10²⁷ possible IDs. 
 
 | Runtime | Versions |
 |---|---|
-| **Node.js** | 20.19+ on 20.x, or 22.12 and later (`import` and `require()`) |
+| **Node.js** | 22.12 and later (`import` and `require()`) |
 | **Bun** | 1.3 and later |
 | **Deno** | Current, via `npm:@smart-science/sid` |
 | **Browsers** | Current evergreen browsers |
