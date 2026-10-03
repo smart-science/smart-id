@@ -154,7 +154,7 @@ describe('parse() - Structural & Boundary Edge Cases', () => {
             error: 'Invalid ID length: expected 20 (raw) or 24 (XXXX-XXXX-XXXX-XXXX-XXXX) characters, got 0',
         });
 
-        // Zero-width space is not whitespace, so it is not trimmed
+        // Zero-width space is not whitespace, so it is not trimmed (@spec 0027)
         expect(parse(`​${VALID_ID}`)).toEqual({
             ok: false,
             code: 'INVALID_LENGTH',

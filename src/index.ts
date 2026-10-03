@@ -5,22 +5,33 @@
 // -------------------------------------------------------------------
 
 /**
- * Validated, canonical 20-character identifier. A branded string: plain at runtime, distinct from `string`
- * at compile time. Obtain it from `generate()`, `fromBytes()`, `parse()`, or `isSID()`; `__sidBrand` exists only in the type.
+ * Validated, canonical 20-character identifier.
+ *
+ * @spec 0004: Canonical form: uppercase, unhyphenated, no whitespace.
+ * @spec 0008: Branding: `SID` and `FormattedSID` are compile-time branded strings; plain strings at runtime.
+ * @spec 0009: Brand key: `__sidBrand` exists only in the type; runtime values have no such property.
+ * @spec 0011: `SID` producers: `generate()`, `fromBytes()`, `parse()`, `isSID()`.
  */
 // biome-ignore lint/style/useNamingConvention: public API name + type-only brand key
 export type SID = string & { readonly __sidBrand: 'SID' };
 
 /**
- * Validated, canonical 24-character identifier `XXXX-XXXX-XXXX-XXXX-XXXX`. A branded string like `SID`.
- * Obtain it from `generateFormatted()`, `format()`, or `isFormattedSID()`.
+ * Validated, canonical 24-character formatted identifier `XXXX-XXXX-XXXX-XXXX-XXXX`.
+ *
+ * @spec 0005: Formatted layout: 24 characters `XXXX-XXXX-XXXX-XXXX-XXXX` (hyphens at 0-based indices 4, 9, 14, 19).
+ * @spec 0010: `FormattedSID` type: template literal `${string}-${string}-${string}-${string}-${string}` plus brand.
+ * @spec 0012: `FormattedSID` producers: `generateFormatted()`, `format()`, `isFormattedSID()`.
  */
 export type FormattedSID = `${string}-${string}-${string}-${string}-${string}` & {
     // biome-ignore lint/style/useNamingConvention: type-only brand key
     readonly __sidBrand: 'FormattedSID';
 };
 
-/** Machine-readable reason why `parse()` or `format()` failed. */
+/**
+ * Machine-readable reason why `parse()` or `format()` failed.
+ *
+ * @spec 0015: Error codes: `NOT_A_STRING`, `INVALID_LENGTH`, `INVALID_FORMAT`, `INVALID_CHARACTER`, `CHECKSUM_MISMATCH`.
+ */
 export type SidErrorCode =
     | 'NOT_A_STRING'
     | 'INVALID_LENGTH'
@@ -28,7 +39,12 @@ export type SidErrorCode =
     | 'INVALID_CHARACTER'
     | 'CHECKSUM_MISMATCH';
 
-/** Result of `parse()` and `format()`: success with `data`, or failure with `code` and `error`. */
+/**
+ * Result of `parse()` and `format()`: success with `data`, or failure with `code` and `error`.
+ *
+ * @spec 0013: Result type: `parse()` and `format()` return `SidResult<T>`, a union discriminated by `ok`.
+ * @spec 0016: Immutability: `SidResult` properties are readonly.
+ */
 export type SidResult<T> =
     | {
           /** Successful operation indicator. */
@@ -39,9 +55,17 @@ export type SidResult<T> =
     | {
           /** Failed operation indicator. */
           readonly ok: false;
-          /** Machine-readable error code. */
+          /**
+           * Machine-readable error code.
+           *
+           * @spec 0014: Error code: `code` is the stable contract; branch on it.
+           */
           readonly code: SidErrorCode;
-          /** Human-readable message; branch on `code` instead, as the wording may change. */
+          /**
+           * Human-readable message.
+           *
+           * @spec 0044: Error message: `error` is diagnostic only; wording may change between versions.
+           */
           readonly error: string;
       };
 
@@ -49,13 +73,18 @@ export type SidResult<T> =
 // 2. Constants & Dictionaries
 // -------------------------------------------------------------------
 
-/** Canonical Crockford Base32 alphabet: excludes [`I`, `L`, `O`, `U`]. */
+/**
+ * Canonical Crockford Base32 alphabet.
+ *
+ * @spec 0002: Alphabet: Crockford Base32 `0123456789ABCDEFGHJKMNPQRSTVWXYZ` (excludes I, L, O, U).
+ * @spec 0043: Export: alphabet exported as `CROCKFORD_ALPHABET`; character index = 5-bit value.
+ */
 export const CROCKFORD_ALPHABET = '0123456789ABCDEFGHJKMNPQRSTVWXYZ' as const;
 
-/** Required length of the raw identifier payload - excl. checksum. */
+/** @spec 0003: Bit capacity: 5 bits per character; 18-character payload = 90 bits. */
 const PAYLOAD_LENGTH = 18;
 
-/** Minimum byte count for `fromBytes()`: 18 characters x 5 bits = 90 bits, rounded up to 12 bytes. */
+/** @spec 0046: Input length: `fromBytes()` requires >= 12 bytes (90 bits rounded up); shorter input returns `null`. */
 const MIN_BYTES = 12;
 
 /** `%TypedArray%.prototype[Symbol.toStringTag]` getter: reads `[[TypedArrayName]]`, works across realms, never throws. */
@@ -65,21 +94,26 @@ const typedArrayName: ((this: unknown) => unknown) | undefined = Object.getOwnPr
     Symbol.toStringTag,
 )?.get;
 
-/** Required length of the complete raw identifier incl. checksum (2 check characters = 10 bits). */
+/** @spec 0001: Length: 20 characters (18 payload characters, 2 check characters). */
 const TOTAL_LENGTH = 20;
 
 /** Required length of the formatted identifier `XXXX-XXXX-XXXX-XXXX-XXXX`. */
 const FORMATTED_LENGTH = 24;
 
-/** ASCII decode table: canonical + lowercase chars, `I/i/L/l` -> 1, `O/o` -> 0, else -1. */
+/** ASCII decode table: char code -> 5-bit value, -1 if invalid. */
 const DECODE = new Int8Array(128).fill(-1);
 const LOWER_ALPHABET = CROCKFORD_ALPHABET.toLowerCase();
+/** @spec 0030: Case tolerance: input decoding is case-insensitive. */
 for (let i = 0; i < CROCKFORD_ALPHABET.length; i++) {
     const charCode = CROCKFORD_ALPHABET.charCodeAt(i);
     DECODE[charCode] = i;
     const lowerCharCode = LOWER_ALPHABET.charCodeAt(i);
     DECODE[lowerCharCode] = i;
 }
+/**
+ * @spec 0031: Character repair: `I`/`i`/`L`/`l` -> `1`, `O`/`o` -> `0`.
+ * @spec 0032: Character U: `U`/`u` is never repaired; rejected as `INVALID_CHARACTER`.
+ */
 for (const c of 'IiLl') {
     DECODE[c.charCodeAt(0)] = 1;
 }
@@ -87,7 +121,10 @@ for (const c of 'Oo') {
     DECODE[c.charCodeAt(0)] = 0;
 }
 
-/** 10-bit check value for a weighted payload sum `Σ val_i * (i + 1)`: `sum mod 1024`. */
+/**
+ * @spec 0006: Check value: 10 bits, weighted sum Σ(val_i * (i + 1)) (i = 0..17) mod 1024.
+ * @spec 0050: Error detection: catches every single-character substitution and every swap of two different payload characters; a random 20-character string passes with probability 1/1024.
+ */
 function checkValue(sum: number): number {
     return sum & 0x3ff;
 }
@@ -99,8 +136,9 @@ function checkValue(sum: number): number {
 /**
  * **Generates a random 20-character identifier with a valid checksum.**
  *
- * - uses `globalThis.crypto.getRandomValues` to generate 18 random Crockford Base32 characters
- * - appends the 2 calculated weighted Modulo-1024 check characters.
+ * @spec 0017: Entropy source: `generate()` synchronously draws 18 bytes from `globalThis.crypto.getRandomValues` (CSPRNG).
+ * @spec 0045: Random value mapping: each random byte keeps its low 5 bits (`byte & 31`, value 0-31) as one character; 256 is a multiple of 32, so all characters are equally likely.
+ * @spec 0018: Throw contract: only `generate()` and `generateFormatted()` throw, a `TypeError` when Web Crypto is missing (no insecure fallback); all other exports never throw.
  *
  * @returns Canonical 20-character unhyphenated `SID`.
  * @throws {TypeError} If the runtime has no global Web Crypto (`globalThis.crypto.getRandomValues`), e.g. Node.js 18 and older.
@@ -123,16 +161,19 @@ export function generate(): SID {
  * - reads the first 90 bits (MSB-first) as 18 Crockford Base32 characters; later bits are ignored
  * - appends the 2 calculated weighted Modulo-1024 check characters
  *
- * Same bytes always yield the same `SID`. Hashing is left to the caller to keep the package runtime-agnostic:
- * Node.js/Bun `createHash('sha256').update(text).digest()`, browsers `new Uint8Array(await crypto.subtle.digest('SHA-256', data))`.
- *
  * Never throws; safe against non-`Uint8Array` and too short inputs.
+ *
+ * @spec 0021: Determinism: identical byte input yields identical `SID`.
+ * @spec 0022: No hashing: bytes are used as-is; callers hash first (e.g. SHA-256) for uniformly distributed IDs.
  *
  * @param bytes - At least 12 bytes (`Buffer` accepted).
  * @returns Canonical 20-character unhyphenated `SID`, or `null` if `bytes` is not a `Uint8Array` or shorter than 12 bytes.
  */
 export function fromBytes(bytes: Uint8Array): SID | null {
-    // check `isView` first: `instanceof` throws on revoked proxies.
+    /**
+     * @spec 0023: Input type: any `Uint8Array`, including Node.js/Bun `Buffer` and instances from other realms (`node:vm`, iframes); other values (other typed arrays, `ArrayBuffer`, `DataView`, plain arrays) return `null`.
+     * @spec 0024: Exotic input: revoked Proxy returns `null` (`isView` checked before the typed-array brand check, where `instanceof` would throw); detached buffer has length 0 and returns `null`.
+     */
     if (
         !ArrayBuffer.isView(bytes) ||
         (!(bytes instanceof Uint8Array) && typedArrayName?.call(bytes) !== 'Uint8Array') ||
@@ -141,6 +182,10 @@ export function fromBytes(bytes: Uint8Array): SID | null {
         return null;
     }
 
+    /**
+     * @spec 0025: Payload extraction: bytes are read as one bit stream, most significant bit first; each consecutive 5 bits form one character value (bits 0-4 -> character 0, bits 5-9 -> character 1, ...).
+     * @spec 0047: Trailing data: only the first 90 bits are used (bytes 0-10 and the top 2 bits of byte 11); everything after is ignored.
+     */
     const values = new Uint8Array(PAYLOAD_LENGTH);
     let buffer = 0;
     let bits = 0;
@@ -161,8 +206,7 @@ export function fromBytes(bytes: Uint8Array): SID | null {
 /**
  * **Generates a formatted identifier grouped as `XXXX-XXXX-XXXX-XXXX-XXXX`.**
  *
- * - generates a canonical 20-character `SID`
- * - groups it into a 24-character hyphenated `FormattedSID` string
+ * @spec 0020: `generateFormatted()`: formats `generate()` output to `XXXX-XXXX-XXXX-XXXX-XXXX`.
  *
  * @returns Formatted 24-character hyphenated `FormattedSID` string.
  * @throws {TypeError} If the runtime has no global Web Crypto (`globalThis.crypto.getRandomValues`), e.g. Node.js 18 and older.
@@ -180,6 +224,8 @@ export function generateFormatted(): FormattedSID {
  *
  * Never throws; safe against non-string and malformed inputs.
  *
+ * @spec 0038: `verify()`: returns `parse(input).ok`.
+ *
  * @param input - Raw or formatted SID.
  * @returns `true` if valid, else `false`.
  */
@@ -190,9 +236,7 @@ export function verify(input: unknown): boolean {
 /**
  * **Type guard verifying if an input is strictly a canonical 20-character SID.**
  *
- * Unlike `verify()`, which accepts formatted (`XXXX-XXXX-XXXX-XXXX-XXXX`), lowercase,
- * whitespace-padded, or repaired variants, `isSID()` returns `true` *only* if the input
- * is already an exact canonical unhyphenated uppercase 20-character `SID`. Never throws.
+ * @spec 0041: `isSID()`: type guard narrowing to `SID`; `true` only for input that is already canonical (no trimming, case folding, repair, or hyphens, unlike `verify()`).
  *
  * @param input - Value to validate.
  * @returns `true` if input is an exact canonical `SID`, narrowing the type.
@@ -208,9 +252,7 @@ export function isSID(input: unknown): input is SID {
 /**
  * **Type guard verifying if an input is strictly a canonical formatted SID (`XXXX-XXXX-XXXX-XXXX-XXXX`).**
  *
- * Unlike `verify()`, which accepts unhyphenated, lowercase, whitespace-padded, or repaired
- * variants, `isFormattedSID()` returns `true` *only* if the input is already an exact
- * canonical 24-character hyphenated uppercase `FormattedSID`. Never throws.
+ * @spec 0042: `isFormattedSID()`: type guard narrowing to `FormattedSID`; `true` only for input that is already canonical and hyphenated (no trimming, case folding, or repair, unlike `verify()`).
  *
  * @param input - Value to validate.
  * @returns `true` if input is an exact canonical `FormattedSID`, narrowing the type.
@@ -237,6 +279,8 @@ export function isFormattedSID(input: unknown): input is FormattedSID {
  *
  * Never throws; safe against non-string and malformed inputs.
  *
+ * @spec 0033: Error precedence: `NOT_A_STRING`, `INVALID_LENGTH`, `INVALID_FORMAT`, then one left-to-right pass reporting the first `INVALID_CHARACTER` or `CHECKSUM_MISMATCH`.
+ *
  * @param input - Raw or formatted SID.
  * @returns `SidResult<SID>` containing canonical 20-character `SID` on success, else error result.
  */
@@ -252,8 +296,12 @@ export function parse(input: unknown): SidResult<SID> {
     for (let i = 0; i < TOTAL_LENGTH; i++) {
         const code = clean.charCodeAt(i);
         const val = DECODE[code] ?? -1;
+        /**
+         * @spec 0034: Alphabet validation: non-Crockford character (including non-ASCII) returns `INVALID_CHARACTER`.
+         * @spec 0035: Diagnostic character: `INVALID_CHARACTER` error names the offending character as a full code point.
+         * @spec 0049: Diagnostic index: `INVALID_CHARACTER` error reports the 0-based UTF-16 index in the trimmed input, hyphens included.
+         */
         if (val === -1) {
-            // UTF-16 index into the trimmed input; formatted input shifts by one per preceding hyphen
             const index = trimmed.length === FORMATTED_LENGTH ? i + Math.floor(i / 4) : i;
             const char = String.fromCodePoint(trimmed.codePointAt(index) ?? 0);
             return {
@@ -262,6 +310,7 @@ export function parse(input: unknown): SidResult<SID> {
                 error: `Invalid ID ${JSON.stringify(trimmed)} contains invalid character ${JSON.stringify(char)} at index ${index}`,
             };
         }
+        /** @spec 0036: Checksum validation: check characters must match the computed check value; otherwise `CHECKSUM_MISMATCH`. */
         if (i < PAYLOAD_LENGTH) {
             sum += val * (i + 1);
         } else if (val !== (i === PAYLOAD_LENGTH ? (checkValue(sum) >> 5) & 31 : checkValue(sum) & 31)) {
@@ -274,16 +323,20 @@ export function parse(input: unknown): SidResult<SID> {
         canonical += CROCKFORD_ALPHABET[val] ?? '';
     }
 
+    /**
+     * @spec 0037: Parse success: returns `{ ok: true, data: SID }` with canonical 20-character `SID`.
+     * @spec 0048: Canonical case: output is strictly uppercase, whatever the input case.
+     */
     return { ok: true, data: canonical as SID };
 }
 
 /**
  * **Formats an identifier into quad groups `XXXX-XXXX-XXXX-XXXX-XXXX`.**
  *
- * - parses and validates raw or formatted identifier input
- * - formats it into the 24-character quad group (`XXXX-XXXX-XXXX-XXXX-XXXX`)
- *
  * Never throws; safe against non-string and malformed inputs.
+ *
+ * @spec 0039: `format()` success: returns `{ ok: true, data: FormattedSID }` for all `parse()`-valid inputs.
+ * @spec 0040: `format()` failure: propagates `parse()` error result unchanged.
  *
  * @param input - Raw or formatted SID.
  * @returns `SidResult<FormattedSID>` containing formatted identifier on success, else error result.
@@ -332,14 +385,12 @@ function encode(values: Uint8Array): SID {
     }
 
     const check = checkValue(sum);
+    /** @spec 0007: Checksum encoding: 2 alphabet characters (high 5 bits first, low 5 bits second). */
     return (payload + (CROCKFORD_ALPHABET[(check >> 5) & 31] ?? '') + (CROCKFORD_ALPHABET[check & 31] ?? '')) as SID;
 }
 
 /**
  * **Normalizes raw input into canonical 20-character format.**
- *
- * - trims whitespace
- * - validates hyphen positions (`XXXX-XXXX-XXXX-XXXX-XXXX`) and strips them
  *
  * Does not change case, repair ambiguous characters, or validate alphabet membership and checksum;
  * `parse()` does all of that in a single pass over the ASCII decode table.
@@ -348,6 +399,7 @@ function encode(values: Uint8Array): SID {
  * @returns Cleaned 20-character string alongside trimmed input on success, or an error result.
  */
 function normalize(input: unknown): SidResult<{ trimmed: string; clean: string }> {
+    /** @spec 0026: Input type: accepts `unknown`; non-string returns `NOT_A_STRING`. */
     if (typeof input !== 'string') {
         return {
             ok: false,
@@ -356,12 +408,14 @@ function normalize(input: unknown): SidResult<{ trimmed: string; clean: string }
         };
     }
 
+    /** @spec 0027: Whitespace: `String.prototype.trim()` removes leading/trailing whitespace and line breaks, incl. NBSP and BOM; zero-width characters (e.g. U+200B) are not trimmed. */
     const trimmed = input.trim();
 
     if (trimmed.length === TOTAL_LENGTH) {
         return { ok: true, data: { trimmed, clean: trimmed } };
     }
 
+    /** @spec 0029: Hyphen validation: 24-character input needs hyphens exactly at indices 4, 9, 14, 19 and nowhere else; otherwise `INVALID_FORMAT`. */
     if (trimmed.length === FORMATTED_LENGTH) {
         if (
             trimmed.indexOf('-', 0) === 4 &&
@@ -390,6 +444,7 @@ function normalize(input: unknown): SidResult<{ trimmed: string; clean: string }
         };
     }
 
+    /** @spec 0028: Length check: trimmed length must be 20 (raw) or 24 (formatted); otherwise `INVALID_LENGTH`. */
     return {
         ok: false,
         code: 'INVALID_LENGTH',
