@@ -6,6 +6,7 @@ Thumbs.db
 
 # Editor
 #.vscode - keep
+.smartin/
 
 # Dependencies
 node_modules/

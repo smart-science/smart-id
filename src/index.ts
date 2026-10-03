@@ -1,10 +1,7 @@
-/*!
- * Copyright 2026 Martin Winkler
- * SPDX-License-Identifier: Apache-2.0
- */
+// Copyright 2026 Martin Winkler
 
 // -------------------------------------------------------------------
-// 1. Type Declarations
+// 1. Types
 // -------------------------------------------------------------------
 
 /**

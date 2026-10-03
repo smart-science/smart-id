@@ -1,7 +1,4 @@
-/*
- * Copyright 2026 Martin Winkler
- * SPDX-License-Identifier: Apache-2.0
- */
+// Copyright 2026 Martin Winkler
 
 import type { FormattedSID, SID } from '../src/index.js';
 
