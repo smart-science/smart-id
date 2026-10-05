@@ -9,23 +9,38 @@ if (process.env.CI) {
     assert.equal(process.versions.bun, undefined, 'smoke tests must run under Node in CI to test dist/');
 }
 
-import { format, generate, generateFormatted, isFormattedSID, isSID, parse, verify } from '@smart-science/sid';
+import {
+    CROCKFORD_ALPHABET,
+    format,
+    fromBytes,
+    generate,
+    generateFormatted,
+    isFormattedSID,
+    isSID,
+    parse,
+    verify,
+} from '@smart-science/sid';
 
 const id = generate();
-assert.equal(id.length, 16);
+assert.equal(id.length, 20);
 assert.ok(verify(id));
 assert.ok(verify(generateFormatted()));
-assert.deepEqual(parse('0123-4567-89AB-CDE7'), { ok: true, data: '0123456789ABCDE7' });
-assert.deepEqual(format('0123456789ABCDE7'), { ok: true, data: '0123-4567-89AB-CDE7' });
+assert.deepEqual(parse('0123-4567-89AB-CDEF-GHWJ'), { ok: true, data: '0123456789ABCDEFGHWJ' });
+assert.deepEqual(format('0123456789ABCDEFGHWJ'), { ok: true, data: '0123-4567-89AB-CDEF-GHWJ' });
 assert.equal(verify(null), false);
 assert.equal(isSID(id), true);
-assert.equal(isSID('0123456789abcde7'), false);
+assert.equal(isSID('0123456789abcdefghwj'), false);
 assert.equal(isFormattedSID(generateFormatted()), true);
 assert.deepEqual(parse(null), { ok: false, code: 'NOT_A_STRING', error: 'Expected string input, received null' });
-assert.equal(parse('0123456789ABCDEN').code, 'CHECKSUM_MISMATCH');
+assert.equal(parse('0123456789ABCDEFGHWK').code, 'CHECKSUM_MISMATCH');
+assert.equal(fromBytes(new Uint8Array(12).fill(0xff)), 'ZZZZZZZZZZZZZZZZZZ5N');
+assert.equal(fromBytes(new Uint8Array(11)), null);
+assert.equal(CROCKFORD_ALPHABET, '0123456789ABCDEFGHJKMNPQRSTVWXYZ');
 const api = await import('@smart-science/sid');
 assert.deepEqual(Object.keys(api).sort(), [
+    'CROCKFORD_ALPHABET',
     'format',
+    'fromBytes',
     'generate',
     'generateFormatted',
     'isFormattedSID',

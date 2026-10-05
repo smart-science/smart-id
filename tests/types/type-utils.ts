@@ -1,7 +1,4 @@
-/*
- * Copyright 2026 Martin Winkler
- * SPDX-License-Identifier: Apache-2.0
- */
+// Copyright 2026 Martin Winkler
 
 // -------------------------------------------------------------------
 // 1. Compile-Time Type Assertion Primitives

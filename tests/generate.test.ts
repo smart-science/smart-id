@@ -1,7 +1,4 @@
-/*
- * Copyright 2026 Martin Winkler
- * SPDX-License-Identifier: Apache-2.0
- */
+// Copyright 2026 Martin Winkler
 
 // -------------------------------------------------------------------
 // 1. Imports
@@ -21,7 +18,7 @@ describe('generate() & generateFormatted()', () => {
             const bucketCounts = new Uint32Array(32);
             for (let i = 0; i < 1_000; i++) {
                 const id = generate();
-                for (let j = 0; j < 16; j++) {
+                for (let j = 0; j < 20; j++) {
                     const char = id[j] ?? '';
                     const idx = ALPHABET.indexOf(char);
                     expect(idx).not.toBe(-1);
@@ -29,22 +26,22 @@ describe('generate() & generateFormatted()', () => {
                     bucketCounts[idx] = currentCount + 1;
                 }
             }
-            // every single Crockford Base32 symbol must appear at least once across 16,000 generated characters (incl. check characters).
+            // every single Crockford Base32 symbol must appear at least once across 20,000 generated characters (incl. check characters).
             expect(bucketCounts.every((count) => count > 0)).toBe(true);
         });
 
         it('generates a valid quad-grouped FormattedSID that roundtrips cleanly with parse()', () => {
             const formatted = generateFormatted();
-            expect(formatted).toHaveLength(19);
+            expect(formatted).toHaveLength(24);
             expect(formatted).toMatch(
-                /^[0-9A-HJKMNP-TV-Z]{4}-[0-9A-HJKMNP-TV-Z]{4}-[0-9A-HJKMNP-TV-Z]{4}-[0-9A-HJKMNP-TV-Z]{4}$/,
+                /^[0-9A-HJKMNP-TV-Z]{4}-[0-9A-HJKMNP-TV-Z]{4}-[0-9A-HJKMNP-TV-Z]{4}-[0-9A-HJKMNP-TV-Z]{4}-[0-9A-HJKMNP-TV-Z]{4}$/,
             );
             expect(verify(formatted)).toBe(true);
 
             const parsed = parse(formatted);
             expect(parsed.ok).toBe(true);
             if (parsed.ok) {
-                expect(parsed.data).toHaveLength(16);
+                expect(parsed.data).toHaveLength(20);
                 expect(parsed.data).toBe(formatted.replace(/-/g, '') as SID);
             }
         });
@@ -59,7 +56,7 @@ describe('generate() & generateFormatted()', () => {
 
             try {
                 const id = generate();
-                expect(id).toBe('0000000000000000' as SID);
+                expect(id).toBe('00000000000000000000' as SID);
                 expect(verify(id)).toBe(true);
             } finally {
                 spy.mockRestore();
@@ -67,7 +64,7 @@ describe('generate() & generateFormatted()', () => {
         });
 
         it('proves bitmasking (& 31) when random bytes are all 0xFF', () => {
-            // 0xFF & 31 = 31 ('Z'). 15 'Z's produce check character 'Z'.
+            // 0xFF & 31 = 31 ('Z'). 18 'Z's produce check characters '5N'.
             const spy = spyOn(globalThis.crypto, 'getRandomValues').mockImplementation((arr: ArrayBufferView) => {
                 (arr as Uint8Array).fill(0xff);
                 return arr;
@@ -75,7 +72,7 @@ describe('generate() & generateFormatted()', () => {
 
             try {
                 const id = generate();
-                expect(id).toBe('ZZZZZZZZZZZZZZZZ' as SID);
+                expect(id).toBe('ZZZZZZZZZZZZZZZZZZ5N' as SID);
                 expect(verify(id)).toBe(true);
             } finally {
                 spy.mockRestore();
@@ -83,7 +80,7 @@ describe('generate() & generateFormatted()', () => {
         });
 
         it('generates exact canonical identifier from fixed byte sequence', () => {
-            // payload values 0..14 ('0123456789ABCDE') with high bit variation
+            // payload values 0..17 ('0123456789ABCDEFGH') with high bit variation
             const fixedSequence = [
                 0, // '0'
                 1 | 0x40, // '1' with high bits
@@ -100,6 +97,9 @@ describe('generate() & generateFormatted()', () => {
                 12, // 'C'
                 13, // 'D'
                 14 | 0xa0, // 'E'
+                15, // 'F'
+                16 | 0xc0, // 'G'
+                17, // 'H'
             ];
 
             const spy = spyOn(globalThis.crypto, 'getRandomValues').mockImplementation((arr: ArrayBufferView) => {
@@ -112,7 +112,7 @@ describe('generate() & generateFormatted()', () => {
 
             try {
                 const id = generate();
-                expect(id).toBe('0123456789ABCDE7' as SID);
+                expect(id).toBe('0123456789ABCDEFGHWJ' as SID);
                 expect(verify(id)).toBe(true);
             } finally {
                 spy.mockRestore();

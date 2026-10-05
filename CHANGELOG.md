@@ -5,6 +5,21 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Added
+
+- `fromBytes(bytes)` derives a deterministic `SID` from the first 90 bits of a `Uint8Array` (e.g. a SHA-256 digest). Returns `null` for fewer than 12 bytes or non-`Uint8Array` input; never throws.
+- `CROCKFORD_ALPHABET` exports the 32-character alphabet in value order.
+
+### Changed
+
+- **BREAKING**: IDs have 20 characters (18 random + 2 check characters, 90 bits of randomness) instead of 16. The hyphenated form has five groups: `XXXX-XXXX-XXXX-XXXX-XXXX` (24 characters).
+- **BREAKING**: The check is a weighted sum modulo 1024 (`Σ value × position`, positions 1 to 18) written as two characters. Every single wrong character and every swap of two characters is detected; random input passes with a probability of 1 in 1024. IDs created with 0.2.x no longer verify.
+- **BREAKING**: `FormattedSID` is a five-group template literal type.
+- `INVALID_LENGTH` and `INVALID_FORMAT` messages name the new lengths (20 or 24) and hyphen positions (4, 9, 14, 19).
+- **BREAKING**: `engines.node` raised to `>=22.12.0`; Node.js 20 is no longer supported.
+
 ## [0.2.0] - 2026-09-18
 
 ### Added
@@ -57,6 +72,7 @@ Tagged in git only; not published to npm.
 - Initial release with `generate()`, `generateFormatted()`, `verify()`, `parse()`, `format()`, and `unformat()`.
 - Crockford Base32 identifier generation with a Modulo-32 alternating-weight checksum.
 
+[Unreleased]: https://github.com/smart-science/smart-id/compare/v0.2.0...HEAD
 [0.2.0]: https://github.com/smart-science/smart-id/compare/v0.1.1...v0.2.0
 [0.1.1]: https://github.com/smart-science/smart-id/compare/v0.1.0...v0.1.1
 [0.1.0]: https://github.com/smart-science/smart-id/releases/tag/v0.1.0

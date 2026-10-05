@@ -9,7 +9,7 @@
   },
   "files": {
     "ignoreUnknown": true,
-    "includes": ["**", "!!**/*.md", "!!**/tests", "!!**/.claude", "!!**/.agents"]
+    "includes": ["**", "!!**/*.md", "!!**/tests", "!!**/docs", "!!**/old", "!!**/*.old", "!!**/.claude", "!!**/.agents"]
   },
   "formatter": {
     "enabled": true,
@@ -131,10 +131,7 @@
     }
   },
   "json": {
-    "parser": {
-      "allowComments": false,
-      "allowTrailingCommas": false
-    },
+    // Omitting "parser" defaults to allowComments: false for .json and allowComments: true for .jsonc
     "formatter": {
       "indentWidth": 2,
       "trailingCommas": "none"

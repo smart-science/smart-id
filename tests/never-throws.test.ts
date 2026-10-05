@@ -1,14 +1,11 @@
-/*
- * Copyright 2026 Martin Winkler
- * SPDX-License-Identifier: Apache-2.0
- */
+// Copyright 2026 Martin Winkler
 
 // -------------------------------------------------------------------
 // 1. Imports
 // -------------------------------------------------------------------
 
 import { describe, expect, it } from 'bun:test';
-import { format, isFormattedSID, isSID, parse, verify } from '../src/index.js';
+import { format, fromBytes, isFormattedSID, isSID, parse, type SID, verify } from '../src/index.js';
 
 // -------------------------------------------------------------------
 // 2. Hostile & Unusual Inputs
@@ -36,12 +33,12 @@ const HOSTILE_INPUTS: readonly unknown[] = [
     'x'.repeat(1_000_000),
     {},
     [],
-    [...'0123456789ABCDE7'],
-    new String('0123456789ABCDE7'),
+    [...'0123456789ABCDEFGHWJ'],
+    new String('0123456789ABCDEFGHWJ'),
     Object.create(null),
     () => {},
     new Date(),
-    new Uint8Array(16),
+    new Uint8Array(20),
     revocable.proxy,
     { toString: throwOnAccess, valueOf: throwOnAccess, [Symbol.toPrimitive]: throwOnAccess },
     Object.defineProperty({}, 'length', { get: throwOnAccess }),
@@ -72,6 +69,19 @@ describe('Validation functions never throw', () => {
         }
     });
 
+    it('fromBytes returns null for hostile inputs, except a valid Uint8Array', () => {
+        // runtime guard for JS callers; the cast only widens the parameter type.
+        const call = fromBytes as (input: unknown) => SID | null;
+        for (const input of HOSTILE_INPUTS) {
+            const res = call(input);
+            if (ArrayBuffer.isView(input) && input instanceof Uint8Array) {
+                expect(isSID(res)).toBe(true);
+            } else {
+                expect(res).toBeNull();
+            }
+        }
+    });
+
     it('names the received type in NOT_A_STRING messages', () => {
         const cases: readonly (readonly [unknown, string])[] = [
             [undefined, 'undefined'],
@@ -80,7 +90,7 @@ describe('Validation functions never throw', () => {
             [10n, 'bigint'],
             [true, 'boolean'],
             [Symbol('sid'), 'symbol'],
-            [new String('0123456789ABCDE7'), 'object'],
+            [new String('0123456789ABCDEFGHWJ'), 'object'],
             [[], 'object'],
             [() => {}, 'function'],
         ];

@@ -1,15 +1,14 @@
-/*
- * Copyright 2026 Martin Winkler
- * SPDX-License-Identifier: Apache-2.0
- */
+// Copyright 2026 Martin Winkler
 
 // -------------------------------------------------------------------
 // 1. Imports
 // -------------------------------------------------------------------
 
 import type {
+    CROCKFORD_ALPHABET,
     FormattedSID,
     format,
+    fromBytes,
     generate,
     generateFormatted,
     isFormattedSID,
@@ -49,6 +48,13 @@ export type Test_IsFormattedSID_TypeGuard = Expect<
     Extends<typeof isFormattedSID, (input: unknown) => input is FormattedSID>
 >;
 
+// 2.8 fromBytes takes a Uint8Array and returns SID or null.
+export type Test_FromBytes_ReturnType = Expect<Equal<ReturnType<typeof fromBytes>, SID | null>>;
+export type Test_FromBytes_Parameters = Expect<Equal<Parameters<typeof fromBytes>, [bytes: Uint8Array]>>;
+
+// 2.9 CROCKFORD_ALPHABET is the literal alphabet type.
+export type Test_CrockfordAlphabet_Type = Expect<Equal<typeof CROCKFORD_ALPHABET, '0123456789ABCDEFGHJKMNPQRSTVWXYZ'>>;
+
 // -------------------------------------------------------------------
 // 3. Nominal Branding & Subtype Invariants
 // -------------------------------------------------------------------
@@ -60,7 +66,9 @@ export type Test_SID_Extends_String = Expect<Extends<SID, string>>;
 export type Test_FormattedSID_Extends_String = Expect<Extends<FormattedSID, string>>;
 
 // 3.3 FormattedSID matches quad-grouped template literal pattern.
-export type Test_FormattedSID_Pattern = Expect<Extends<FormattedSID, `${string}-${string}-${string}-${string}`>>;
+export type Test_FormattedSID_Pattern = Expect<
+    Extends<FormattedSID, `${string}-${string}-${string}-${string}-${string}`>
+>;
 
 // 3.4 unvalidated string cannot be assigned to nominal SID.
 export type Test_String_Does_Not_Extend_SID = ExpectFalse<Extends<string, SID>>;
@@ -77,7 +85,7 @@ export type Test_FormattedSID_Does_Not_Extend_SID = ExpectFalse<Extends<Formatte
 // 3.8 Brand shapes are pinned: changing them breaks assignability between two installed copies of the package.
 export type Test_SID_Brand_Shape = Expect<Equal<SID, string & { readonly __sidBrand: 'SID' }>>;
 export type Test_FormattedSID_Brand_Shape = Expect<
-    Equal<FormattedSID, `${string}-${string}-${string}-${string}` & { readonly __sidBrand: 'FormattedSID' }>
+    Equal<FormattedSID, `${string}-${string}-${string}-${string}-${string}` & { readonly __sidBrand: 'FormattedSID' }>
 >;
 
 // -------------------------------------------------------------------
