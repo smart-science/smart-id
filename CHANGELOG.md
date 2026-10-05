@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.3.0] - 2026-10-05
+
 ### Added
 
 - `fromBytes(bytes)` derives a deterministic `SID` from the first 90 bits of a `Uint8Array` (e.g. a SHA-256 digest). Returns `null` for fewer than 12 bytes or non-`Uint8Array` input; never throws.
@@ -72,7 +74,8 @@ Tagged in git only; not published to npm.
 - Initial release with `generate()`, `generateFormatted()`, `verify()`, `parse()`, `format()`, and `unformat()`.
 - Crockford Base32 identifier generation with a Modulo-32 alternating-weight checksum.
 
-[Unreleased]: https://github.com/smart-science/smart-id/compare/v0.2.0...HEAD
+[Unreleased]: https://github.com/smart-science/smart-id/compare/v0.3.0...HEAD
+[0.3.0]: https://github.com/smart-science/smart-id/compare/v0.2.0...v0.3.0
 [0.2.0]: https://github.com/smart-science/smart-id/compare/v0.1.1...v0.2.0
 [0.1.1]: https://github.com/smart-science/smart-id/compare/v0.1.0...v0.1.1
 [0.1.0]: https://github.com/smart-science/smart-id/releases/tag/v0.1.0
