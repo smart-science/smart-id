@@ -1,19 +1,18 @@
-name: Publish to npm
-run-name: 'Publish ${{ github.ref_name }}: ${{ github.event.head_commit.message }}'
+name: Stage npm release
+run-name: 'Stage ${{ github.ref_name }}: ${{ github.event.head_commit.message }}'
 
 on:
   push:
     tags:
       - 'v*'
 
-# id-token: write lets npm trusted publishing authenticate this workflow via OIDC (no npm token)
 permissions:
   contents: read
   id-token: write
 
 jobs:
-  publish:
-    name: Publish Package
+  stage:
+    name: Stage Package
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
@@ -38,7 +37,6 @@ jobs:
       - name: Setup Node
         uses: actions/setup-node@v7
         with:
-          # Node 24 bundles npm >= 11.5.1, which trusted publishing requires
           node-version: 24
           registry-url: 'https://registry.npmjs.org'
           # never let a dependency cache feed into a release
@@ -55,15 +53,21 @@ jobs:
       - name: Install dependencies
         run: bun install --frozen-lockfile
 
-      # prepublishOnly runs `bun run check` (lint, tests, build, Node smoke tests, package check);
-      # trusted publishing attaches provenance automatically.
-      # NOTE: npm trusted publishing requires the package to exist on npmjs.com first before OIDC can publish.
-      - name: Publish to npm
+      # npm stage needs npm >= 11.15.0; the npm bundled with Node 24 may be older
+      - name: Update npm
+        run: npm install -g npm@^11.15.0
+
+      - name: Check
+        run: bun run check
+
+      - name: Stage release on npm
         run: |
+          NAME="$(node -p "require('./package.json').name")"
           VERSION="$(node -p "require('./package.json').version")"
           TAG_ARG=""
           # any semver prerelease (1.0.0-beta.1, 1.0.0-0, ...) goes to "next", never "latest"
           if [[ "$VERSION" == *-* ]]; then
             TAG_ARG="--tag next"
           fi
-          npm publish $TAG_ARG
+          npm stage publish --ignore-scripts $TAG_ARG
+          echo "Staged $NAME@$VERSION. Approve it on npmjs.com or with: npm stage approve $NAME@$VERSION"

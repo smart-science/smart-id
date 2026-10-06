@@ -1,4 +1,5 @@
 // Copyright 2026 Martin Winkler
+// SPDX-License-Identifier: Apache-2.0
 
 // -------------------------------------------------------------------
 // 1. Imports
@@ -14,9 +15,9 @@ import { format, fromBytes, isFormattedSID, isSID, parse, type SID, verify } fro
 const revocable = Proxy.revocable({}, {});
 revocable.revoke();
 
-const throwOnAccess = (): never => {
+function throwOnAccess(): never {
     throw new Error('accessed');
-};
+}
 
 const HOSTILE_INPUTS: readonly unknown[] = [
     undefined,

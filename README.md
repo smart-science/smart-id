@@ -1,5 +1,11 @@
 # SID (smart-id)
 
+[![Test](https://github.com/smart-science/smart-id/actions/workflows/test.yml/badge.svg)](https://github.com/smart-science/smart-id/actions/workflows/test.yml)
+[![Package](https://github.com/smart-science/smart-id/actions/workflows/package.yml/badge.svg)](https://github.com/smart-science/smart-id/actions/workflows/package.yml)
+[![Bun](https://img.shields.io/badge/dynamic/json?url=https%3A%2F%2Fraw.githubusercontent.com%2Fsmart-science%2Fsmart-id%2Fmain%2Fpackage.json&query=%24.engines.bun&label=Bun&logo=bun&color=blue)](https://bun.sh)
+[![Node.js](https://img.shields.io/badge/dynamic/json?url=https%3A%2F%2Fraw.githubusercontent.com%2Fsmart-science%2Fsmart-id%2Fmain%2Fpackage.json&query=%24.engines.node&label=Node.js&logo=nodedotjs&color=blue)](https://nodejs.org)
+[![License](https://img.shields.io/badge/License-Apache_2.0-blue.svg)](LICENSE)
+
 Fast 20-character identifiers with two check characters: generate, parse, format, and verify. For TypeScript and JavaScript, with no dependencies.
 
 ---

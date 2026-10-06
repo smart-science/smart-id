@@ -1,4 +1,5 @@
 // Copyright 2026 Martin Winkler
+// SPDX-License-Identifier: Apache-2.0
 
 // -------------------------------------------------------------------
 // 1. Imports
@@ -270,11 +271,7 @@ describe('parse() - Structural & Boundary Edge Cases', () => {
         expect(parse(trailingHyphen)).toEqual(expectedFormatError);
 
         // Other delimiters at the hyphen positions
-        for (const delimited of [
-            '0123.4567.89AB.CDEF.GHWJ',
-            '0123 4567 89AB CDEF GHWJ',
-            '0123_4567_89AB_CDEF_GHWJ',
-        ]) {
+        for (const delimited of ['0123.4567.89AB.CDEF.GHWJ', '0123 4567 89AB CDEF GHWJ', '0123_4567_89AB_CDEF_GHWJ']) {
             expect(verify(delimited)).toBe(false);
             expect(parse(delimited)).toEqual(expectedFormatError);
         }

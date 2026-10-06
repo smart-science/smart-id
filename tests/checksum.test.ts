@@ -1,4 +1,5 @@
 // Copyright 2026 Martin Winkler
+// SPDX-License-Identifier: Apache-2.0
 
 // -------------------------------------------------------------------
 // 1. Imports
@@ -22,10 +23,10 @@ const CHAR_PAIRS = 992;
  * Golden Test Vectors for the v0.3 algorithm.
  * Pins checksum calculation to prevent accidental regressions during refactors.
  */
-interface GoldenVector {
+type GoldenVector = {
     readonly payload: string;
     readonly expectedSID: SID;
-}
+};
 
 const GOLDEN_VECTORS: readonly GoldenVector[] = [
     { payload: '000000000000000000', expectedSID: '00000000000000000000' as SID },
