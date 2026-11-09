@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- `fromBytes()` now reads typed-array brand and `length` via intrinsic `%TypedArray%.prototype` getters, so views with a mutated prototype or shadowed `length` cannot throw or spoof a `Uint8Array`.
+
 ## [0.3.0] - 2026-10-05
 
 ### Added

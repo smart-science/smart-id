@@ -126,6 +126,35 @@ describe('fromBytes()', () => {
             expect(call(runInNewContext('new Uint8ClampedArray(12)'))).toBeNull();
         });
 
+        it('returns null for other views given the Uint8Array prototype', () => {
+            const call = fromBytes as (input: unknown) => SID | null;
+            for (const view of [
+                new DataView(new ArrayBuffer(16)),
+                new Float64Array(12).fill(1.5),
+                new Uint16Array(12).fill(0xffff),
+            ]) {
+                Object.setPrototypeOf(view, Uint8Array.prototype);
+                expect(view instanceof Uint8Array).toBe(true); // guards the expectation itself
+                expect(call(view)).toBeNull();
+            }
+        });
+
+        it('ignores a shadowed length and reads the real one', () => {
+            function throwOnAccess(): never {
+                throw new Error('accessed');
+            }
+            class ThrowingLength extends Uint8Array {
+                override get length(): number {
+                    return throwOnAccess();
+                }
+            }
+            expect(fromBytes(Object.defineProperty(new Uint8Array(12), 'length', { get: throwOnAccess }))).toBe(
+                '00000000000000000000' as SID,
+            );
+            expect(fromBytes(new ThrowingLength(12))).toBe('00000000000000000000' as SID);
+            expect(fromBytes(Object.defineProperty(new Uint8Array(11), 'length', { value: 12 }))).toBeNull();
+        });
+
         it('returns null for a view on a detached buffer', () => {
             const buffer = new ArrayBuffer(12);
             const view = new Uint8Array(buffer);
