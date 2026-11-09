@@ -54,9 +54,9 @@ const data = new TextEncoder().encode('10.1000/xyz123');
 const id = fromBytes(new Uint8Array(await crypto.subtle.digest('SHA-256', data)));
 ```
 
-- Only the first 90 bits (12 bytes) are used; a full 32-byte SHA-256 digest can be passed directly.
+- Only the first 90 bits are used (11 bytes plus the top 2 bits of the 12th); a full 32-byte SHA-256 digest can be passed directly.
 - Returns `null` for fewer than 12 bytes or input that is not a `Uint8Array` (a Node.js `Buffer` is accepted).
-- The output is not random: anyone with the same input gets the same ID.
+- The output is deterministic, not random: the same input always yields the same ID (and 90 bits is not a collision-resistant hash against untrusted input).
 
 ### Read an ID: `parse(input)`
 
@@ -187,9 +187,9 @@ load(input as SID); // OK: a cast, unsafe if unchecked
 
 ### Characters
 
-An ID has 20 characters drawn from 32 symbols (Crockford's Base32): digits `0`–`9` and letters `A`–`Z` **without `I`, `L`, `O`, and `U`**. Left out because easily confused with `1` and `0` (and `U` to avoid *accidental* words). The 32 symbols are exported in order as `CROCKFORD_ALPHABET`, for example to build input masks.
+An ID has 20 characters drawn from 32 symbols (Crockford's Base32): digits `0`–`9` and letters `A`–`Z` **without `I`, `L`, `O`, and `U`** (`I`, `L`, `O` are easily confused with `1` and `0`; `U` avoids *accidental* words). The 32 symbols are exported in order as `CROCKFORD_ALPHABET`, for example to build input masks.
 
-First 18 characters are random, which gives about 1.24 × 10²⁷ possible IDs. Two randomly generated IDs are practically never the same. The last two characters are **check characters**: each of the first 18 characters is multiplied by its position (1 to 18), the products are summed, and the sum modulo 1024 is written as two characters.
+The first 18 characters encode 90 bits (random for `generate()`, from the input for `fromBytes()`), giving about 1.24 × 10²⁷ possible IDs. Two randomly generated IDs are practically never the same. The last two characters are **check characters**: each of the first 18 characters is multiplied by its position (1 to 18), the products are summed, and the sum modulo 1024 is written as two characters.
 
 ### Self-repairing input
 

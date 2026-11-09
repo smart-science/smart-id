@@ -19,6 +19,9 @@ function throwOnAccess(): never {
     throw new Error('accessed');
 }
 
+/** The only entry `fromBytes()` accepts; compared by identity, so no type check has to mirror the implementation. */
+const VALID_BYTES = new Uint8Array(20);
+
 const HOSTILE_INPUTS: readonly unknown[] = [
     undefined,
     null,
@@ -39,7 +42,7 @@ const HOSTILE_INPUTS: readonly unknown[] = [
     Object.create(null),
     () => {},
     new Date(),
-    new Uint8Array(20),
+    VALID_BYTES,
     revocable.proxy,
     { toString: throwOnAccess, valueOf: throwOnAccess, [Symbol.toPrimitive]: throwOnAccess },
     Object.defineProperty({}, 'length', { get: throwOnAccess }),
@@ -75,7 +78,7 @@ describe('Validation functions never throw', () => {
         const call = fromBytes as (input: unknown) => SID | null;
         for (const input of HOSTILE_INPUTS) {
             const res = call(input);
-            if (ArrayBuffer.isView(input) && input instanceof Uint8Array) {
+            if (input === VALID_BYTES) {
                 expect(isSID(res)).toBe(true);
             } else {
                 expect(res).toBeNull();

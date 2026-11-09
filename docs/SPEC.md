@@ -46,7 +46,7 @@ Decided behavior and non-obvious details of `@smart-science/sid`. Referenced in 
 - 🔴 @spec 0022: No hashing: bytes are used as-is; callers hash first (e.g. SHA-256) for uniformly distributed IDs.
 - 🔴 @spec 0023: Input type: any `Uint8Array`, including Node.js/Bun `Buffer` and instances from other realms (`node:vm`, iframes); other values (other typed arrays, `ArrayBuffer`, `DataView`, plain arrays) return `null`.
 - 🔴 @spec 0046: Input length: `fromBytes()` requires >= 12 bytes (90 bits rounded up); shorter input returns `null`.
-- 🔴 @spec 0024: Exotic input: revoked Proxy returns `null` (`isView` checked before the typed-array brand check, where `instanceof` would throw); detached buffer has length 0 and returns `null`.
+- 🔴 @spec 0024: Exotic input: revoked Proxy returns `null`; detached buffer has length 0 and returns `null`; type and length are read through the intrinsic `%TypedArray%.prototype` getters, so a swapped prototype or a shadowed `length` can neither spoof them nor throw.
 - 🔴 @spec 0025: Payload extraction: bytes are read as one bit stream, most significant bit first; each consecutive 5 bits form one character value (bits 0-4 -> character 0, bits 5-9 -> character 1, ...).
 - 🔴 @spec 0047: Trailing data: only the first 90 bits are used (bytes 0-10 and the top 2 bits of byte 11); everything after is ignored.
 

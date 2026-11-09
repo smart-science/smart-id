@@ -54,7 +54,7 @@
     "clean": "rm -rf dist",
     "build": "bun run clean && bun run build:types && bun run build:js",
     "build:types": "tsc --emitDeclarationOnly",
-    "build:js": "bun build ./src/index.ts --outdir ./dist --target node --format esm --packages external --sourcemap=linked --banner=\"/*! Copyright 2026 Martin Winkler */\"",
+    "build:js": "bun build ./src/index.ts --outdir ./dist --target node --format esm --packages external --sourcemap=linked --banner=\"/*! Copyright 2026 Martin Winkler. SPDX-License-Identifier: Apache-2.0 */\"",
     "typecheck": "tsc --noEmit -p tsconfig.json && bun run test:types",
     "test": "bun test --only-failures && bun run test:types",
     "test:types": "tsc --noEmit -p tsconfig.test.json",
@@ -72,7 +72,9 @@
     "@biomejs/biome": "2.5.14",
     "@types/bun": "^1.4.2",
     "@types/node": "^22.12.0",
+    "bun-test-runner": "latest",
     "fast-check": "^4.10.2",
+    "smartin": "latest",
     "typescript": "^7.0.2"
   }
 }

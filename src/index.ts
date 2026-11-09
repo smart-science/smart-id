@@ -88,11 +88,21 @@ const PAYLOAD_LENGTH = 18;
 /** @spec 0046: Input length: `fromBytes()` requires >= 12 bytes (90 bits rounded up); shorter input returns `null`. */
 const MIN_BYTES = 12;
 
+/** `%TypedArray%.prototype`: holds the intrinsic getters, which a swapped prototype or a shadowed property cannot replace. */
+const typedArrayPrototype = Reflect.getPrototypeOf(Uint8Array.prototype) ?? {};
+
 /** `%TypedArray%.prototype[Symbol.toStringTag]` getter: reads `[[TypedArrayName]]`, works across realms, never throws. */
 // INTENTION: hoisted configuration reference
 const typedArrayName: ((this: unknown) => unknown) | undefined = Object.getOwnPropertyDescriptor(
-    Reflect.getPrototypeOf(Uint8Array.prototype),
+    typedArrayPrototype,
     Symbol.toStringTag,
+)?.get;
+
+/** `%TypedArray%.prototype.length` getter: reads the real element count; throws for non-typed arrays, so call it only after the `typedArrayName` check. */
+// INTENTION: hoisted configuration reference
+const typedArrayLength: ((this: unknown) => unknown) | undefined = Object.getOwnPropertyDescriptor(
+    typedArrayPrototype,
+    'length',
 )?.get;
 
 /** @spec 0001: Length: 20 characters (18 payload characters, 2 check characters). */
@@ -173,12 +183,12 @@ export function generate(): SID {
 export function fromBytes(bytes: Uint8Array): SID | null {
     /**
      * @spec 0023: Input type: any `Uint8Array`, including Node.js/Bun `Buffer` and instances from other realms (`node:vm`, iframes); other values (other typed arrays, `ArrayBuffer`, `DataView`, plain arrays) return `null`.
-     * @spec 0024: Exotic input: revoked Proxy returns `null` (`isView` checked before the typed-array brand check, where `instanceof` would throw); detached buffer has length 0 and returns `null`.
+     * @spec 0024: Exotic input: revoked Proxy returns `null`; detached buffer has length 0 and returns `null`; type and length are read through the intrinsic `%TypedArray%.prototype` getters, so a swapped prototype or a shadowed `length` can neither spoof them nor throw.
      */
     if (
         !ArrayBuffer.isView(bytes) ||
-        (!(bytes instanceof Uint8Array) && typedArrayName?.call(bytes) !== 'Uint8Array') ||
-        bytes.length < MIN_BYTES
+        typedArrayName?.call(bytes) !== 'Uint8Array' ||
+        !((typedArrayLength?.call(bytes) as number) >= MIN_BYTES)
     ) {
         return null;
     }
