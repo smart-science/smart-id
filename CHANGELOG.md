@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.3.1] - 2026-11-09
+
 ### Fixed
 
 - `fromBytes()` now reads typed-array brand and `length` via intrinsic `%TypedArray%.prototype` getters, so views with a mutated prototype or shadowed `length` cannot throw or spoof a `Uint8Array`.
@@ -78,7 +80,8 @@ Tagged in git only; not published to npm.
 - Initial release with `generate()`, `generateFormatted()`, `verify()`, `parse()`, `format()`, and `unformat()`.
 - Crockford Base32 identifier generation with a Modulo-32 alternating-weight checksum.
 
-[Unreleased]: https://github.com/smart-science/smart-id/compare/v0.3.0...HEAD
+[Unreleased]: https://github.com/smart-science/smart-id/compare/v0.3.1...HEAD
+[0.3.1]: https://github.com/smart-science/smart-id/compare/v0.3.0...v0.3.1
 [0.3.0]: https://github.com/smart-science/smart-id/compare/v0.2.0...v0.3.0
 [0.2.0]: https://github.com/smart-science/smart-id/compare/v0.1.1...v0.2.0
 [0.1.1]: https://github.com/smart-science/smart-id/compare/v0.1.0...v0.1.1
